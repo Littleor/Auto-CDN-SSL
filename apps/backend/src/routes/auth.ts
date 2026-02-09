@@ -4,6 +4,7 @@ import { createUser, findUserByEmail, findUserById } from "../services/userServi
 import { hashPassword, verifyPassword } from "../utils/password";
 import { createRefreshToken, findValidRefreshToken, revokeRefreshToken } from "../services/authService";
 import { env } from "../config/env";
+import { refreshUserSchedule } from "../services/scheduler";
 
 const authRoutes: FastifyPluginAsync = async (app) => {
   app.post("/register", async (request, reply) => {
@@ -26,6 +27,8 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       name: body.name,
       passwordHash
     });
+
+    refreshUserSchedule(user.id);
 
     const { token: refreshToken } = createRefreshToken(user.id, env.REFRESH_TOKEN_TTL_DAYS);
     const accessToken = await reply.jwtSign({ sub: user.id, email: user.email });

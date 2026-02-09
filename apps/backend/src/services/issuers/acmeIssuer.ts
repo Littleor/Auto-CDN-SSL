@@ -39,6 +39,13 @@ type AcmeOptions = {
   challengeType?: "http-01" | "dns-01";
   dnsConfig?: TencentDnsConfig;
   onMessage?: (message: string) => void;
+  config?: {
+    accountEmail?: string | null;
+    directoryUrl?: string;
+    skipLocalVerify?: boolean;
+    dnsWaitSeconds?: number;
+    dnsTtl?: number;
+  };
 };
 
 function sleep(ms: number) {
@@ -50,21 +57,27 @@ export async function issueAcme(
   sans: string[],
   options: AcmeOptions = {}
 ): Promise<IssuedCertificate> {
-  if (!env.ACME_ACCOUNT_EMAIL) {
+  const accountEmail = options.config?.accountEmail ?? env.ACME_ACCOUNT_EMAIL ?? null;
+  const directoryUrl = options.config?.directoryUrl ?? env.ACME_DIRECTORY_URL;
+  const skipLocalVerify = options.config?.skipLocalVerify ?? env.ACME_SKIP_LOCAL_VERIFY;
+  const dnsWaitSeconds = options.config?.dnsWaitSeconds ?? env.ACME_DNS_WAIT_SECONDS;
+  const dnsTtl = options.config?.dnsTtl ?? env.ACME_DNS_TTL;
+
+  if (!accountEmail) {
     throw new Error("ACME_ACCOUNT_EMAIL is required for Let's Encrypt issuance");
   }
-  if (env.ACME_ACCOUNT_EMAIL.toLowerCase().endsWith("@example.com")) {
+  if (accountEmail.toLowerCase().endsWith("@example.com")) {
     throw new Error("ACME_ACCOUNT_EMAIL must be a real email (example.com is not allowed)");
   }
   const accountKey = await loadAccountKey();
   const client = new acme.Client({
-    directoryUrl: env.ACME_DIRECTORY_URL,
+    directoryUrl,
     accountKey
   });
 
   await client.createAccount({
     termsOfServiceAgreed: true,
-    contact: [`mailto:${env.ACME_ACCOUNT_EMAIL}`]
+    contact: [`mailto:${accountEmail}`]
   });
 
   const [key, csr] = await acme.forge.createCsr({
@@ -78,10 +91,10 @@ export async function issueAcme(
   try {
     const cert = await client.auto({
       csr,
-      email: env.ACME_ACCOUNT_EMAIL,
+      email: accountEmail,
       termsOfServiceAgreed: true,
       challengePriority: [challengeType],
-      skipChallengeVerification: env.ACME_SKIP_LOCAL_VERIFY,
+      skipChallengeVerification: skipLocalVerify,
       challengeCreateFn: async (_authz, challenge, keyAuthorization) => {
         if (challengeType === "http-01") {
           options.onMessage?.("写入 HTTP-01 校验文件");
@@ -96,10 +109,10 @@ export async function issueAcme(
           domain: _authz.identifier.value,
           value: keyAuthorization,
           config: dnsConfig,
-          ttl: env.ACME_DNS_TTL
+          ttl: dnsTtl
         });
         setDnsRecord(challenge.token, record);
-        const waitSeconds = env.ACME_DNS_WAIT_SECONDS;
+        const waitSeconds = dnsWaitSeconds;
         if (waitSeconds > 0) {
           options.onMessage?.(`等待 DNS 解析生效（约 ${waitSeconds}s）`);
           await sleep(waitSeconds * 1000);

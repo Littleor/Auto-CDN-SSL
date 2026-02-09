@@ -20,6 +20,20 @@ const defaultForm = {
   renewDaysBefore: 30
 };
 
+type UserSettingsForm = {
+  renewalHour: number;
+  renewalMinute: number;
+  renewalThresholdDays: number;
+  acmeAccountEmail: string | null;
+  acmeDirectoryUrl: string;
+  acmeSkipLocalVerify: boolean;
+  acmeDnsWaitSeconds: number;
+  acmeDnsTtl: number;
+};
+
+const formatTimeValue = (hour: number, minute: number) =>
+  `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
 export function SitesPage() {
   const { accessToken } = useAuth();
   const [sites, setSites] = useState<any[]>([]);
@@ -28,6 +42,9 @@ export function SitesPage() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<UserSettingsForm | null>(null);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
   const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [issuingAll, setIssuingAll] = useState(false);
   const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
@@ -51,8 +68,14 @@ export function SitesPage() {
     apiRequest<any[]>("/providers", {}, accessToken).then(setProviders);
   };
 
+  const fetchSettings = () => {
+    if (!accessToken) return;
+    apiRequest<UserSettingsForm>("/user-settings", {}, accessToken).then(setSettings);
+  };
+
   useEffect(() => {
     fetchData();
+    fetchSettings();
   }, [accessToken]);
 
   useEffect(() => {
@@ -88,6 +111,41 @@ export function SitesPage() {
       setError(err.message || "创建失败");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateSettings = (patch: Partial<UserSettingsForm>) => {
+    setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const handleSettingsSave = async () => {
+    if (!accessToken || !settings) return;
+    setSettingsSaving(true);
+    setSettingsMessage(null);
+    try {
+      await apiRequest(
+        "/user-settings",
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            renewalHour: settings.renewalHour,
+            renewalMinute: settings.renewalMinute,
+            renewalThresholdDays: settings.renewalThresholdDays,
+            acmeAccountEmail: settings.acmeAccountEmail || null,
+            acmeDirectoryUrl: settings.acmeDirectoryUrl || null,
+            acmeSkipLocalVerify: settings.acmeSkipLocalVerify,
+            acmeDnsWaitSeconds: settings.acmeDnsWaitSeconds,
+            acmeDnsTtl: settings.acmeDnsTtl
+          })
+        },
+        accessToken
+      );
+      setSettingsMessage("已保存");
+      fetchSettings();
+    } catch (err: any) {
+      setSettingsMessage(err.message || "保存失败");
+    } finally {
+      setSettingsSaving(false);
     }
   };
 
@@ -277,6 +335,128 @@ export function SitesPage() {
           </Dialog>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>续签与 ACME 设置</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {!settings ? (
+            <div className="text-sm text-muted-foreground">加载中...</div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                <p className="text-sm font-semibold">续签策略</p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">每日续签时间</label>
+                    <Input
+                      type="time"
+                      value={formatTimeValue(settings.renewalHour, settings.renewalMinute)}
+                      onChange={(e) => {
+                        const [hour, minute] = e.target.value.split(":").map(Number);
+                        if (Number.isNaN(hour) || Number.isNaN(minute)) return;
+                        updateSettings({ renewalHour: hour, renewalMinute: minute });
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">每天定时执行自动续签。</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">提前续签（天）</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={90}
+                      value={settings.renewalThresholdDays}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (Number.isNaN(value)) return;
+                        updateSettings({ renewalThresholdDays: value });
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">证书到期前多少天开始续签。</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-semibold">ACME 参数</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">账户邮箱</label>
+                    <Input
+                      type="email"
+                      value={settings.acmeAccountEmail ?? ""}
+                      onChange={(e) => updateSettings({ acmeAccountEmail: e.target.value })}
+                      placeholder="acme@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">目录地址</label>
+                    <Input
+                      value={settings.acmeDirectoryUrl}
+                      onChange={(e) => updateSettings({ acmeDirectoryUrl: e.target.value })}
+                      placeholder="https://acme-v02.api.letsencrypt.org/directory"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">DNS 等待时间（秒）</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={settings.acmeDnsWaitSeconds}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (Number.isNaN(value)) return;
+                        updateSettings({ acmeDnsWaitSeconds: value });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">DNS TTL（秒）</label>
+                    <Input
+                      type="number"
+                      min={60}
+                      value={settings.acmeDnsTtl}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (Number.isNaN(value)) return;
+                        updateSettings({ acmeDnsTtl: value });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">跳过本地校验</label>
+                    <Select
+                      value={settings.acmeSkipLocalVerify ? "true" : "false"}
+                      onValueChange={(value) =>
+                        updateSettings({ acmeSkipLocalVerify: value === "true" })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">关闭</SelectItem>
+                        <SelectItem value="true">启用</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Button onClick={handleSettingsSave} disabled={settingsSaving}>
+                  {settingsSaving ? "保存中..." : "保存设置"}
+                </Button>
+                {settingsMessage && (
+                  <p className="text-xs text-muted-foreground">{settingsMessage}</p>
+                )}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

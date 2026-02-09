@@ -8,6 +8,7 @@ import { Site, listSites } from "./siteService";
 import { getProviderCredential, decryptProviderConfig } from "./providerService";
 import { getDomainSetting } from "./domainSettingsService";
 import { getApexDomain } from "../utils/domain";
+import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService";
 
 export type CertificateRecord = {
   id: string;
@@ -89,7 +90,8 @@ function insertCertificate(siteId: string, cert: {
   return record;
 }
 
-async function runIssueJob(site: Site, jobId: string) {
+async function runIssueJob(site: Site, jobId: string, settings?: ResolvedUserSettings) {
+  const resolvedSettings = settings ?? getResolvedUserSettings(site.user_id);
   updateJobMessage(jobId, "准备证书申请");
   const sans: string[] = [];
   let cert;
@@ -133,7 +135,8 @@ async function runIssueJob(site: Site, jobId: string) {
     cert = await issueAcme(site.domain, sans, {
       challengeType,
       dnsConfig,
-      onMessage: (message) => updateJobMessage(jobId, message)
+      onMessage: (message) => updateJobMessage(jobId, message),
+      config: resolvedSettings.acme
     });
   } else {
     updateJobMessage(jobId, "生成自签证书");
@@ -143,11 +146,11 @@ async function runIssueJob(site: Site, jobId: string) {
   return insertCertificate(site.id, cert);
 }
 
-export async function issueCertificateForSite(site: Site) {
+export async function issueCertificateForSite(site: Site, settings?: ResolvedUserSettings) {
   const job = createJob(site.id, "renew");
   startJob(job.id);
   try {
-    const record = await runIssueJob(site, job.id);
+    const record = await runIssueJob(site, job.id, settings);
     finishJob(job.id, "success");
     return record;
   } catch (error: any) {
@@ -156,12 +159,12 @@ export async function issueCertificateForSite(site: Site) {
   }
 }
 
-export function enqueueCertificateIssue(site: Site) {
+export function enqueueCertificateIssue(site: Site, settings?: ResolvedUserSettings) {
   const job = createJob(site.id, "renew");
   startJob(job.id);
   setTimeout(async () => {
     try {
-      await runIssueJob(site, job.id);
+      await runIssueJob(site, job.id, settings);
       finishJob(job.id, "success");
     } catch (error: any) {
       finishJob(job.id, "failed", error?.message ?? "issue failed");

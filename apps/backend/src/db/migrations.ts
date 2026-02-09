@@ -138,5 +138,25 @@ export const migrations: Migration[] = [
       FOREIGN KEY(dns_credential_id) REFERENCES provider_credentials(id) ON DELETE SET NULL
     );
     `
+  },
+  {
+    id: "007_user_settings",
+    sql: `
+    CREATE TABLE IF NOT EXISTS user_settings (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL UNIQUE,
+      renewal_hour INTEGER NOT NULL DEFAULT 3,
+      renewal_minute INTEGER NOT NULL DEFAULT 0,
+      renewal_threshold_days INTEGER NOT NULL DEFAULT 30,
+      acme_account_email TEXT,
+      acme_directory_url TEXT,
+      acme_skip_local_verify INTEGER NOT NULL DEFAULT 0,
+      acme_dns_wait_seconds INTEGER NOT NULL DEFAULT 20,
+      acme_dns_ttl INTEGER NOT NULL DEFAULT 600,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    `
   }
 ];

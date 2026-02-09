@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth";
 import providerRoutes from "./routes/providers";
 import siteRoutes from "./routes/sites";
 import domainSettingsRoutes from "./routes/domainSettings";
+import userSettingsRoutes from "./routes/userSettings";
 import certificateRoutes from "./routes/certificates";
 import deploymentRoutes from "./routes/deployments";
 import jobsRoutes from "./routes/jobs";
@@ -62,6 +63,7 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: "/auth" });
   await app.register(providerRoutes, { prefix: "/providers" });
   await app.register(siteRoutes, { prefix: "/sites" });
+  await app.register(userSettingsRoutes, { prefix: "/user-settings" });
   await app.register(domainSettingsRoutes, { prefix: "/domain-settings" });
   await app.register(certificateRoutes, { prefix: "/certificates" });
   await app.register(deploymentRoutes, { prefix: "/deployments" });

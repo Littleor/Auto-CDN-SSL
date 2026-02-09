@@ -36,3 +36,8 @@ export function findUserById(id: string): User | null {
   const row = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
   return row ? (row as User) : null;
 }
+
+export function listUsers(): User[] {
+  const db = getDb();
+  return db.prepare("SELECT * FROM users ORDER BY created_at DESC").all() as User[];
+}
