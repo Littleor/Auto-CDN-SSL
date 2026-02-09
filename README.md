@@ -8,6 +8,9 @@
 - 验证方式：HTTP-01 / DNS-01（DNS-01 目前支持腾讯云 DNS）
 - 部署目标：腾讯云 CDN、七牛云 CDN
 
+![Home](assets/Screenshot-homepage.png)
+![Site](assets/Screenshot-site-list.png)
+
 ## 我们解决了什么问题
 
 CDN 域名多、证书多时，常见痛点是：

@@ -8,6 +8,9 @@ A self-hosted SSL automation platform for CDN scenarios: **issue / renew / deplo
 - Validation: HTTP-01 / DNS-01 (DNS-01 currently supports Tencent Cloud DNS)
 - Deployment targets: Tencent Cloud CDN, Qiniu CDN
 
+![Home](assets/Screenshot-homepage.png)
+![Site](assets/Screenshot-site-list.png)
+
 ## What problem does it solve?
 
 When you manage a large number of CDN domains, certificates become a reliability risk:
