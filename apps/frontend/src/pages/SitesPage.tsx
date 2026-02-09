@@ -35,11 +35,20 @@ export function SitesPage() {
   const [actionMessage, setActionMessage] = useState<Record<string, string>>({});
   const jobTimers = useRef<Record<string, number>>({});
 
-  const providerOptions = useMemo(() => providers, [providers]);
-  const dnsOptions = useMemo(
-    () => providers.filter((provider) => provider.providerType === "tencent"),
+  const providerOptions = useMemo(
+    () => providers.filter((provider) => ["tencent", "qiniu"].includes(provider.providerType)),
     [providers]
   );
+  const dnsOptions = useMemo(
+    () => providers.filter((provider) => provider.providerType === "tencent_dns"),
+    [providers]
+  );
+  const providerLabel = (providerType: string) => {
+    if (providerType === "tencent") return "腾讯云 CDN";
+    if (providerType === "qiniu") return "七牛云 CDN";
+    if (providerType === "tencent_dns") return "腾讯云 DNS";
+    return providerType;
+  };
 
   const fetchData = () => {
     if (!accessToken) return;
@@ -70,7 +79,10 @@ export function SitesPage() {
             name: form.name,
             domain: form.domain,
             providerCredentialId: form.providerCredentialId || null,
-            dnsCredentialId: form.dnsCredentialId || null,
+            dnsCredentialId:
+              form.certificateSource === "letsencrypt" && form.acmeChallengeType === "dns-01"
+                ? form.dnsCredentialId || null
+                : null,
             certificateSource: form.certificateSource,
             acmeChallengeType: form.acmeChallengeType,
             autoRenew: form.autoRenew,
@@ -235,11 +247,16 @@ export function SitesPage() {
                     <SelectContent>
                       {dnsOptions.map((provider) => (
                         <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name} ({provider.providerType})
+                          {provider.name} ({providerLabel(provider.providerType)})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {dnsOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      还没有 DNS 凭据，请先到“云平台凭据”里创建腾讯云 DNS 凭据。
+                    </p>
+                  )}
                 </div>
               )}
               <div className="space-y-2">
@@ -254,7 +271,7 @@ export function SitesPage() {
                   <SelectContent>
                     {providerOptions.map((provider) => (
                       <SelectItem key={provider.id} value={provider.id}>
-                        {provider.name} ({provider.providerType})
+                        {provider.name} ({providerLabel(provider.providerType)})
                       </SelectItem>
                     ))}
                   </SelectContent>

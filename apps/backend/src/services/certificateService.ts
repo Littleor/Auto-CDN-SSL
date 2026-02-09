@@ -102,8 +102,8 @@ async function runIssueJob(site: Site, jobId: string) {
       if (!credential) {
         throw new Error("DNS 凭据不存在");
       }
-      if (credential.provider_type !== "tencent") {
-        throw new Error("当前仅支持腾讯云 DNS");
+      if (!["tencent", "tencent_dns"].includes(credential.provider_type)) {
+        throw new Error("当前仅支持腾讯云 DNS 凭据");
       }
       dnsConfig = decryptProviderConfig(credential) as any;
     }

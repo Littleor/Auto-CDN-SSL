@@ -16,6 +16,12 @@ const initialForm = {
   accessKey: ""
 };
 
+const providerLabels: Record<string, string> = {
+  tencent: "腾讯云 CDN",
+  qiniu: "七牛云 CDN",
+  tencent_dns: "腾讯云 DNS"
+};
+
 export function ProvidersPage() {
   const { accessToken } = useAuth();
   const [providers, setProviders] = useState<any[]>([]);
@@ -41,7 +47,7 @@ export function ProvidersPage() {
     setError(null);
     try {
       const config =
-        form.providerType === "tencent"
+        form.providerType === "tencent" || form.providerType === "tencent_dns"
           ? { secretId: form.secretId, secretKey: form.secretKey }
           : { accessKey: form.accessKey, secretKey: form.secretKey };
 
@@ -121,8 +127,9 @@ export function ProvidersPage() {
                     <SelectValue placeholder="选择平台" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tencent">腾讯云</SelectItem>
-                    <SelectItem value="qiniu">七牛云</SelectItem>
+                    <SelectItem value="tencent">腾讯云 CDN</SelectItem>
+                    <SelectItem value="qiniu">七牛云 CDN</SelectItem>
+                    <SelectItem value="tencent_dns">腾讯云 DNS</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -134,7 +141,7 @@ export function ProvidersPage() {
                   placeholder="如：生产环境"
                 />
               </div>
-              {form.providerType === "tencent" ? (
+              {form.providerType === "tencent" || form.providerType === "tencent_dns" ? (
                 <>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">SecretId</label>
@@ -195,7 +202,9 @@ export function ProvidersPage() {
             <CardHeader className="flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base">{provider.name}</CardTitle>
-                <p className="text-xs text-muted-foreground">{provider.providerType}</p>
+                <p className="text-xs text-muted-foreground">
+                  {providerLabels[provider.providerType] ?? provider.providerType}
+                </p>
               </div>
               <Cloud className="h-5 w-5 text-primary" />
             </CardHeader>
@@ -204,15 +213,19 @@ export function ProvidersPage() {
                 创建时间：{new Date(provider.createdAt).toLocaleDateString("zh-CN")}
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSync(provider.id)}
-                  disabled={syncingId === provider.id}
-                >
-                  <RefreshCw className="mr-1 h-3.5 w-3.5" />
-                  {syncingId === provider.id ? "同步中..." : "同步站点"}
-                </Button>
+                {provider.providerType !== "tencent_dns" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSync(provider.id)}
+                    disabled={syncingId === provider.id}
+                  >
+                    <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                    {syncingId === provider.id ? "同步中..." : "同步站点"}
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">DNS 凭据无需同步</span>
+                )}
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>

@@ -19,6 +19,10 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
           fields: ["secretId", "secretKey"]
         },
         {
+          type: "tencent_dns",
+          fields: ["secretId", "secretKey"]
+        },
+        {
           type: "qiniu",
           fields: ["accessKey", "secretKey"]
         }
@@ -46,7 +50,7 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body);
 
-    if (body.providerType === "tencent") {
+    if (body.providerType === "tencent" || body.providerType === "tencent_dns") {
       TencentConfigSchema.parse(body.config);
     }
     if (body.providerType === "qiniu") {
@@ -73,7 +77,7 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body);
 
-    if (body.providerType === "tencent") {
+    if (body.providerType === "tencent" || body.providerType === "tencent_dns") {
       TencentConfigSchema.parse(body.config);
     }
     if (body.providerType === "qiniu") {
@@ -103,6 +107,9 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(404).send({ message: "Provider credential not found" });
     }
 
+    if (credential.provider_type === "tencent_dns") {
+      return reply.code(400).send({ message: "DNS 凭据不支持站点同步" });
+    }
     const result = await syncProviderSites(request.user.sub, credential);
     reply.send(result);
   });

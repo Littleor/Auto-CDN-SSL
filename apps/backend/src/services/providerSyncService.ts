@@ -21,6 +21,8 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
     domains = await listTencentDomains(config);
   } else if (credential.provider_type === "qiniu") {
     domains = await listQiniuDomains(config);
+  } else if (credential.provider_type === "tencent_dns") {
+    throw new Error("DNS 凭据不支持站点同步");
   } else {
     throw new Error("Unsupported provider type");
   }

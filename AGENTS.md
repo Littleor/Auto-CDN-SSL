@@ -46,6 +46,7 @@ yarn workspace frontend dev
 ## 任务与调度
 - 自动续签由 `node-cron` 触发，默认每天凌晨 3 点执行
 - ACME HTTP-01 挑战路径：`/.well-known/acme-challenge/:token`
+- DNS-01：在「云平台凭据」中新建 `腾讯云 DNS`，在站点选择 `DNS-01` 并绑定 DNS 凭据
 
 ## 测试
 ```bash
