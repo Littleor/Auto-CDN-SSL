@@ -1,0 +1,244 @@
+import { useEffect, useMemo, useState } from "react";
+import { Plus, ShieldCheck, Server } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiRequest } from "@/lib/api";
+import { daysUntil, formatDate } from "@/lib/format";
+
+const defaultForm = {
+  name: "",
+  domain: "",
+  providerCredentialId: "",
+  certificateSource: "self_signed",
+  autoRenew: true,
+  renewDaysBefore: 30
+};
+
+export function SitesPage() {
+  const { accessToken } = useAuth();
+  const [sites, setSites] = useState<any[]>([]);
+  const [providers, setProviders] = useState<any[]>([]);
+  const [form, setForm] = useState(defaultForm);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const providerOptions = useMemo(() => providers, [providers]);
+
+  const fetchData = () => {
+    if (!accessToken) return;
+    apiRequest<any[]>("/sites", {}, accessToken).then(setSites);
+    apiRequest<any[]>("/providers", {}, accessToken).then(setProviders);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [accessToken]);
+
+  const handleSubmit = async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await apiRequest(
+        "/sites",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: form.name,
+            domain: form.domain,
+            providerCredentialId: form.providerCredentialId || null,
+            certificateSource: form.certificateSource,
+            autoRenew: form.autoRenew,
+            renewDaysBefore: Number(form.renewDaysBefore)
+          })
+        },
+        accessToken
+      );
+      setOpen(false);
+      setForm(defaultForm);
+      fetchData();
+    } catch (err: any) {
+      setError(err.message || "创建失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleIssue = async (siteId: string) => {
+    if (!accessToken) return;
+    await apiRequest(
+      "/certificates/issue",
+      { method: "POST", body: JSON.stringify({ siteId }) },
+      accessToken
+    );
+    fetchData();
+  };
+
+  const handleDeploy = async (siteId: string) => {
+    if (!accessToken) return;
+    await apiRequest(
+      "/deployments",
+      { method: "POST", body: JSON.stringify({ siteId }) },
+      accessToken
+    );
+    fetchData();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold">网站管理</h2>
+          <p className="text-sm text-muted-foreground">为每个站点配置证书来源与 CDN 平台。</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              新建网站
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>新增网站</DialogTitle>
+              <DialogDescription>填写站点与证书信息。</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">站点名称</label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="如：主站"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">域名</label>
+                <Input
+                  value={form.domain}
+                  onChange={(e) => setForm({ ...form, domain: e.target.value })}
+                  placeholder="example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">证书来源</label>
+                <Select
+                  value={form.certificateSource}
+                  onValueChange={(value) => setForm({ ...form, certificateSource: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择证书来源" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="letsencrypt">Let's Encrypt</SelectItem>
+                    <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">CDN 平台凭据</label>
+                <Select
+                  value={form.providerCredentialId}
+                  onValueChange={(value) => setForm({ ...form, providerCredentialId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择凭据 (可选)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providerOptions.map((provider) => (
+                      <SelectItem key={provider.id} value={provider.id}>
+                        {provider.name} ({provider.providerType})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                取消
+              </Button>
+              <Button onClick={handleSubmit} disabled={loading}>
+                {loading ? "创建中..." : "创建"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>站点列表</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>站点</TableHead>
+                <TableHead>证书状态</TableHead>
+                <TableHead>到期时间</TableHead>
+                <TableHead>平台</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sites.map((site) => {
+                const days = daysUntil(site.latestCertificate?.expiresAt || null);
+                return (
+                  <TableRow key={site.id}>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <p className="font-semibold">{site.name}</p>
+                        <p className="text-xs text-muted-foreground">{site.domain}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {site.latestCertificate ? (
+                        <Badge variant={days !== null && days <= 7 ? "warning" : "success"}>
+                          {site.latestCertificate.status}
+                        </Badge>
+                      ) : (
+                        <Badge variant="muted">未签发</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {site.latestCertificate ? formatDate(site.latestCertificate.expiresAt) : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Server className="h-3.5 w-3.5" />
+                        {site.providerCredentialId ? "已绑定" : "未绑定"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleIssue(site.id)}>
+                          <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+                          续签
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => handleDeploy(site.id)}>
+                          部署
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          {sites.length === 0 && (
+            <div className="py-12 text-center text-sm text-muted-foreground">暂无站点，先创建一个吧。</div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
