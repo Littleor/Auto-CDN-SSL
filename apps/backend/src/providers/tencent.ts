@@ -22,12 +22,13 @@ export async function deployToTencentCdn(params: {
   }
 
   const sdk: any = tencentcloud as any;
-  const Client = sdk?.cdn?.v20180606?.Client;
-  if (!Client) {
-    throw new Error("Tencent Cloud CDN SDK not available");
+  const CdnClient = sdk?.cdn?.v20180606?.Client;
+  const SslClient = sdk?.ssl?.v20191205?.Client;
+  if (!CdnClient || !SslClient) {
+    throw new Error("Tencent Cloud CDN/SSL SDK not available");
   }
 
-  const client = new Client({
+  const cdnClient = new CdnClient({
     credential: { secretId, secretKey },
     region: "",
     profile: {
@@ -37,19 +38,30 @@ export async function deployToTencentCdn(params: {
     }
   });
 
-  const uploadRes = await client.UploadCert({
-    Cert: params.certPem,
-    Key: params.keyPem,
-    CertType: "SVR",
+  const sslClient = new SslClient({
+    credential: { secretId, secretKey },
+    region: "",
+    profile: {
+      httpProfile: {
+        endpoint: "ssl.tencentcloudapi.com"
+      }
+    }
+  });
+
+  const uploadRes = await sslClient.UploadCertificate({
+    CertificatePublicKey: params.certPem,
+    CertificatePrivateKey: params.keyPem,
+    CertificateType: "SVR",
+    CertificateUse: "CDN",
     Alias: `auto-ssl-${params.domain}-${Date.now()}`
   });
 
-  const certId = uploadRes?.CertId || uploadRes?.CertificateId;
+  const certId = uploadRes?.CertificateId || uploadRes?.RepeatCertId;
   if (!certId) {
     throw new Error("Failed to upload cert to Tencent CDN");
   }
 
-  await client.UpdateDomainConfig({
+  await cdnClient.UpdateDomainConfig({
     Domain: params.domain,
     Https: {
       Switch: "on",
