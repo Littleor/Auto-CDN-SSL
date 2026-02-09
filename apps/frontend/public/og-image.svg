@@ -1,0 +1,42 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B1220"/>
+      <stop offset="0.5" stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="220" y1="140" x2="520" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#22C55E"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="700" y1="100" x2="1100" y2="450" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38BDF8" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#22C55E" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="980" cy="150" r="240" fill="url(#glow)"/>
+  <circle cx="220" cy="500" r="180" fill="#0EA5E9" fill-opacity="0.08"/>
+  <rect x="120" y="130" width="260" height="260" rx="60" fill="#111827" stroke="#1F2937" stroke-width="4"/>
+  <path
+    d="M250 170L330 194V276C330 320 302 362 250 392C198 362 170 320 170 276V194L250 170Z"
+    fill="url(#accent)"
+  />
+  <rect x="228" y="254" width="44" height="38" rx="9" fill="#0B1220" opacity="0.92"/>
+  <path
+    d="M232 254V244C232 232.954 240.954 224 252 224C263.046 224 272 232.954 272 244V254"
+    stroke="#E2E8F0"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <circle cx="250" cy="274" r="6" fill="#E2E8F0"/>
+  <text x="440" y="270" fill="#F8FAFC" font-size="64" font-family="Sora, Arial, sans-serif" font-weight="700">
+    Auto CDN SSL
+  </text>
+  <text x="440" y="340" fill="#CBD5F5" font-size="28" font-family="Sora, Arial, sans-serif" font-weight="500">
+    CDN SSL 证书自动续签与部署平台
+  </text>
+  <text x="440" y="388" fill="#94A3B8" font-size="22" font-family="IBM Plex Mono, monospace">
+    专为 CDN 场景打造 · 自动续签 · 自动部署 · 可视化监控
+  </text>
+</svg>
