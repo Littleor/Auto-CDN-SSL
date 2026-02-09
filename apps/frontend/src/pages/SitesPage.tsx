@@ -302,20 +302,12 @@ export function SitesPage() {
                         (24 * 60 * 60 * 1000)
                     )
                   : null;
-                const overdueDays =
-                  remainingDays !== null && remainingDays < 0 ? Math.abs(remainingDays) : 0;
-                const progress = hasRange
-                  ? Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        ((Date.now() - new Date(displayIssuedAt!).getTime()) /
-                          (new Date(displayExpiresAt!).getTime() -
-                            new Date(displayIssuedAt!).getTime())) *
-                          100
-                      )
-                    )
-                  : 0;
+                const normalizedRemaining =
+                  remainingDays !== null ? Math.max(0, remainingDays) : null;
+                const ratioText =
+                  hasRange && normalizedRemaining !== null && totalDays
+                    ? `${normalizedRemaining}/${totalDays}`
+                    : "-";
                 const issueState = issuing[site.id] ?? "idle";
                 const deployState = deploying[site.id] ?? "idle";
                 const actionState = issueState !== "idle" ? issueState : deployState;
@@ -349,24 +341,18 @@ export function SitesPage() {
                     <TableCell>
                       {displayExpiresAt ? formatDate(displayExpiresAt) : "-"}
                     </TableCell>
-                    <TableCell className="min-w-[220px]">
-                      {hasRange ? (
-                        <div className="space-y-2">
-                          <div className="h-2 w-full rounded-full bg-muted/70">
-                            <div
-                              className="h-2 rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            有效期 {totalDays} 天 · {remainingDays !== null && remainingDays >= 0
-                              ? `剩余 ${remainingDays} 天`
-                              : `已过期 ${overdueDays} 天`}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                    <TableCell className="w-20 text-xs font-mono">
+                      <span
+                        className={
+                          remainingDays !== null && remainingDays < 0
+                            ? "text-destructive"
+                            : remainingDays !== null && remainingDays <= 7
+                              ? "text-amber-600"
+                              : "text-muted-foreground"
+                        }
+                      >
+                        {ratioText}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {providerStatus ? (

@@ -43,7 +43,7 @@ export function LoginPage() {
                 <ShieldCheck className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Auto-SSL</p>
+                <p className="text-sm text-muted-foreground">Auto-SSL</p>
                 <h1 className="text-4xl font-semibold">自动申请 · 续签 · 部署 CDN 证书</h1>
               </div>
             </div>

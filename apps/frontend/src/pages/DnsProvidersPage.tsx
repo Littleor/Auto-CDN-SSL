@@ -154,33 +154,31 @@ export function DnsProvidersPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
         {dnsProviders.map((provider) => (
-          <Card key={provider.id}>
-            <CardHeader className="flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base">{provider.name}</CardTitle>
-                <p className="text-xs text-muted-foreground">腾讯云 DNS</p>
+          <div
+            key={provider.id}
+            className="flex items-center justify-between rounded-xl border border-white/60 bg-white/60 px-3 py-2 text-sm"
+          >
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Cloud className="h-4 w-4 text-primary" />
+                <span className="font-medium">{provider.name}</span>
               </div>
-              <Cloud className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
-                创建时间：{new Date(provider.createdAt).toLocaleDateString("zh-CN")}
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-muted-foreground">
+                腾讯云 DNS · {new Date(provider.createdAt).toLocaleDateString("zh-CN")}
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         ))}
         {dnsProviders.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-              <Cloud className="h-6 w-6" />
-              暂无 DNS 凭据
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-muted-foreground/40 px-4 py-8 text-center text-sm text-muted-foreground">
+            <Cloud className="h-6 w-6" />
+            暂无 DNS 凭据
+          </div>
         )}
       </div>
     </div>

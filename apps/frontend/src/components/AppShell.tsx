@@ -98,7 +98,7 @@ export function AppShell() {
 
           <div className="mt-auto space-y-4">
             <div className="rounded-2xl bg-white/80 p-4 text-sm shadow-soft">
-              <p className="text-xs uppercase text-muted-foreground">当前账号</p>
+              <p className="text-xs text-muted-foreground">当前账号</p>
               <p className="mt-2 font-semibold">{user?.email}</p>
             </div>
             <Button variant="outline" className="w-full" onClick={() => logout()}>
