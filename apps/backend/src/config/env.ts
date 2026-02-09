@@ -18,6 +18,7 @@ const EnvSchema = z.object({
   ACME_ACCOUNT_EMAIL: z.string().email().optional(),
   ACME_HTTP_HOST: z.string().optional(),
   ACME_HTTP_PORT: z.coerce.number().default(80),
+  ACME_SKIP_LOCAL_VERIFY: z.coerce.boolean().default(false),
   RENEWAL_THRESHOLD_DAYS: z.coerce.number().default(30),
   CRON_SCHEDULE: z.string().default("0 3 * * *")
 });
@@ -37,6 +38,7 @@ export const env: Env = EnvSchema.parse({
   ACME_ACCOUNT_EMAIL: process.env.ACME_ACCOUNT_EMAIL,
   ACME_HTTP_HOST: process.env.ACME_HTTP_HOST,
   ACME_HTTP_PORT: process.env.ACME_HTTP_PORT,
+  ACME_SKIP_LOCAL_VERIFY: process.env.ACME_SKIP_LOCAL_VERIFY,
   RENEWAL_THRESHOLD_DAYS: process.env.RENEWAL_THRESHOLD_DAYS,
   CRON_SCHEDULE: process.env.CRON_SCHEDULE
 });

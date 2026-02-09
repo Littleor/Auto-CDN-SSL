@@ -56,3 +56,20 @@ export function finishJob(jobId: string, status: "success" | "failed", message?:
     "UPDATE jobs SET status = ?, message = ?, finished_at = ? WHERE id = ?"
   ).run(status, message ?? null, new Date().toISOString(), jobId);
 }
+
+export function updateJobMessage(jobId: string, message: string) {
+  const db = getDb();
+  db.prepare("UPDATE jobs SET message = ? WHERE id = ?").run(message, jobId);
+}
+
+export function getJobForUser(userId: string, jobId: string): Job | null {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT j.* FROM jobs j
+       JOIN sites s ON s.id = j.site_id
+       WHERE j.id = ? AND s.user_id = ?`
+    )
+    .get(jobId, userId) as Job | undefined;
+  return row ?? null;
+}

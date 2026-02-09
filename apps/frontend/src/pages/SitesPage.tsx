@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Plus, ShieldCheck, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ export function SitesPage() {
   const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [actionMessage, setActionMessage] = useState<Record<string, string>>({});
+  const jobTimers = useRef<Record<string, number>>({});
 
   const providerOptions = useMemo(() => providers, [providers]);
 
@@ -43,6 +44,12 @@ export function SitesPage() {
   useEffect(() => {
     fetchData();
   }, [accessToken]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(jobTimers.current).forEach((timer) => clearInterval(timer));
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!accessToken) return;
@@ -79,14 +86,41 @@ export function SitesPage() {
     setIssuing((prev) => ({ ...prev, [siteId]: "loading" }));
     setActionMessage((prev) => ({ ...prev, [siteId]: "正在续签证书..." }));
     try {
-      await apiRequest(
+      const result = await apiRequest<{ jobId: string }>(
         "/certificates/issue",
         { method: "POST", body: JSON.stringify({ siteId }) },
         accessToken
       );
-      setIssuing((prev) => ({ ...prev, [siteId]: "success" }));
-      setActionMessage((prev) => ({ ...prev, [siteId]: "续签成功" }));
-      fetchData();
+      setActionMessage((prev) => ({ ...prev, [siteId]: "已提交续签任务，等待处理中..." }));
+      const poll = async () => {
+        try {
+          const job = await apiRequest<{
+            id: string;
+            status: string;
+            message: string | null;
+          }>(`/jobs/${result.jobId}`, {}, accessToken);
+          if (job.message) {
+            setActionMessage((prev) => ({ ...prev, [siteId]: job.message || "" }));
+          }
+          if (job.status === "success") {
+            setIssuing((prev) => ({ ...prev, [siteId]: "success" }));
+            setActionMessage((prev) => ({ ...prev, [siteId]: "续签成功" }));
+            clearInterval(jobTimers.current[result.jobId]);
+            fetchData();
+          }
+          if (job.status === "failed") {
+            setIssuing((prev) => ({ ...prev, [siteId]: "error" }));
+            setActionMessage((prev) => ({ ...prev, [siteId]: job.message || "续签失败" }));
+            clearInterval(jobTimers.current[result.jobId]);
+          }
+        } catch (err: any) {
+          setIssuing((prev) => ({ ...prev, [siteId]: "error" }));
+          setActionMessage((prev) => ({ ...prev, [siteId]: err.message || "续签失败" }));
+          clearInterval(jobTimers.current[result.jobId]);
+        }
+      };
+      await poll();
+      jobTimers.current[result.jobId] = window.setInterval(poll, 2000);
     } catch (err: any) {
       setIssuing((prev) => ({ ...prev, [siteId]: "error" }));
       setActionMessage((prev) => ({ ...prev, [siteId]: err.message || "续签失败" }));

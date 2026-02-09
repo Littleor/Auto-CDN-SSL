@@ -56,28 +56,39 @@ export async function issueAcme(domain: string, sans: string[]): Promise<IssuedC
     altNames: [domain, ...sans]
   });
 
-  const cert = await client.auto({
-    csr,
-    email: env.ACME_ACCOUNT_EMAIL,
-    termsOfServiceAgreed: true,
-    challengePriority: ["http-01"],
-    challengeCreateFn: async (_authz, challenge, keyAuthorization) => {
-      setChallenge(challenge.token, keyAuthorization);
-    },
-    challengeRemoveFn: async (_authz, challenge, _keyAuthorization) => {
-      removeChallenge(challenge.token);
-    }
-  });
+  try {
+    const cert = await client.auto({
+      csr,
+      email: env.ACME_ACCOUNT_EMAIL,
+      termsOfServiceAgreed: true,
+      challengePriority: ["http-01"],
+      skipChallengeVerification: env.ACME_SKIP_LOCAL_VERIFY,
+      challengeCreateFn: async (_authz, challenge, keyAuthorization) => {
+        setChallenge(challenge.token, keyAuthorization);
+      },
+      challengeRemoveFn: async (_authz, challenge, _keyAuthorization) => {
+        removeChallenge(challenge.token);
+      }
+    });
 
-  const issuedAt = new Date().toISOString();
-  const expiresAt = parseExpiresAt(cert);
-  return {
-    certPem: cert,
-    keyPem: typeof key === "string" ? key : key.toString(),
-    chainPem: cert,
-    commonName: domain,
-    sans,
-    issuedAt,
-    expiresAt
-  };
+    const issuedAt = new Date().toISOString();
+    const expiresAt = parseExpiresAt(cert);
+    return {
+      certPem: cert,
+      keyPem: typeof key === "string" ? key : key.toString(),
+      chainPem: cert,
+      commonName: domain,
+      sans,
+      issuedAt,
+      expiresAt
+    };
+  } catch (error: any) {
+    const message = error?.message ?? "";
+    if (message.includes("status code 404")) {
+      throw new Error(
+        `HTTP-01 校验失败：请确保 ${domain} 的 80 端口能访问到本服务的 /.well-known/acme-challenge 路径`
+      );
+    }
+    throw error;
+  }
 }

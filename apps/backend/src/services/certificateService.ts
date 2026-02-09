@@ -3,7 +3,7 @@ import { getDb } from "../db";
 import { encrypt } from "../utils/crypto";
 import { issueSelfSigned } from "./issuers/selfSignedIssuer";
 import { issueAcme } from "./issuers/acmeIssuer";
-import { createJob, finishJob, startJob } from "./jobService";
+import { createJob, finishJob, startJob, updateJobMessage } from "./jobService";
 import { Site } from "./siteService";
 
 export type CertificateRecord = {
@@ -86,19 +86,44 @@ function insertCertificate(siteId: string, cert: {
   return record;
 }
 
+async function runIssueJob(site: Site, jobId: string) {
+  updateJobMessage(jobId, "准备证书申请");
+  const sans: string[] = [];
+  let cert;
+  if (site.certificate_source === "letsencrypt") {
+    updateJobMessage(jobId, "进行 ACME 校验");
+    cert = await issueAcme(site.domain, sans);
+  } else {
+    updateJobMessage(jobId, "生成自签证书");
+    cert = issueSelfSigned(site.domain, sans);
+  }
+  updateJobMessage(jobId, "保存证书");
+  return insertCertificate(site.id, cert);
+}
+
 export async function issueCertificateForSite(site: Site) {
   const job = createJob(site.id, "renew");
   startJob(job.id);
   try {
-    const sans: string[] = [];
-    const cert = site.certificate_source === "letsencrypt"
-      ? await issueAcme(site.domain, sans)
-      : issueSelfSigned(site.domain, sans);
-    const record = insertCertificate(site.id, cert);
+    const record = await runIssueJob(site, job.id);
     finishJob(job.id, "success");
     return record;
   } catch (error: any) {
     finishJob(job.id, "failed", error?.message ?? "issue failed");
     throw error;
   }
+}
+
+export function enqueueCertificateIssue(site: Site) {
+  const job = createJob(site.id, "renew");
+  startJob(job.id);
+  setTimeout(async () => {
+    try {
+      await runIssueJob(site, job.id);
+      finishJob(job.id, "success");
+    } catch (error: any) {
+      finishJob(job.id, "failed", error?.message ?? "issue failed");
+    }
+  }, 0);
+  return { jobId: job.id };
 }

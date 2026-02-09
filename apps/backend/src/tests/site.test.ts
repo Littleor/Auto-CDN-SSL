@@ -72,7 +72,7 @@ describe("site + cert + deploy", () => {
 
     const issue = await app.inject({
       method: "POST",
-      url: "/certificates/issue",
+      url: "/certificates/issue?mode=sync",
       headers: { authorization: `Bearer ${accessToken}` },
       payload: { siteId: siteBody.id }
     });

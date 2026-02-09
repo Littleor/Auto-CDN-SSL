@@ -12,6 +12,7 @@ import providerRoutes from "./routes/providers";
 import siteRoutes from "./routes/sites";
 import certificateRoutes from "./routes/certificates";
 import deploymentRoutes from "./routes/deployments";
+import jobsRoutes from "./routes/jobs";
 
 export async function buildApp() {
   migrate();
@@ -62,6 +63,7 @@ export async function buildApp() {
   await app.register(siteRoutes, { prefix: "/sites" });
   await app.register(certificateRoutes, { prefix: "/certificates" });
   await app.register(deploymentRoutes, { prefix: "/deployments" });
+  await app.register(jobsRoutes, { prefix: "/jobs" });
 
   return app;
 }
