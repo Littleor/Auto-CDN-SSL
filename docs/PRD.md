@@ -56,6 +56,8 @@
 - 任务调度：Node Cron
 - 证书申请：ACME (Let's Encrypt) + Self-signed（开发环境）
 - CDN SDK：腾讯云官方 SDK、七牛云官方 SDK
+- 安全：凭据与证书私钥采用 AES-256-GCM 加密存储
+- ACME 校验：HTTP-01 挑战，路径 `/.well-known/acme-challenge/:token`
 
 ## 7. 数据模型（MVP）
 - users
@@ -70,6 +72,7 @@
 - POST /auth/login
 - POST /auth/refresh
 - POST /auth/logout
+- GET /auth/me
 - GET /sites
 - POST /sites
 - GET /sites/:id
@@ -77,9 +80,11 @@
 - DELETE /sites/:id
 - GET /providers
 - POST /providers
+- PATCH /providers/:id
+- DELETE /providers/:id
+- GET /providers/catalog
 - GET /certificates
 - POST /certificates/issue
-- POST /certificates/:id/renew
 - POST /deployments
 - GET /deployments
 
