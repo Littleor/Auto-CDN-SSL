@@ -13,6 +13,8 @@ export type Site = {
   status: string;
   provider_status?: string | null;
   provider_https?: string | null;
+  provider_cert_expires_at?: string | null;
+  provider_cert_name?: string | null;
   created_at: string;
   updated_at: string;
 };

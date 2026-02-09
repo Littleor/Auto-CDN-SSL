@@ -15,6 +15,7 @@ type Site = {
   autoRenew: boolean;
   renewDaysBefore: number;
   status: string;
+  providerCertExpiresAt?: string | null;
   latestCertificate: null | {
     id: string;
     expiresAt: string;
@@ -48,18 +49,24 @@ export function DashboardPage() {
 
   const expiringSites = useMemo(() => {
     return sites.filter((site) => {
-      const days = daysUntil(site.latestCertificate?.expiresAt || null);
+      const expiresAt =
+        site.latestCertificate?.expiresAt ?? site.providerCertExpiresAt ?? null;
+      const days = daysUntil(expiresAt);
       return days !== null && days <= 30;
     });
   }, [sites]);
 
   const nextRenewals = useMemo(() => {
     return [...sites]
-      .filter((site) => site.latestCertificate?.expiresAt)
+      .filter((site) => site.latestCertificate?.expiresAt || site.providerCertExpiresAt)
       .sort(
         (a, b) =>
-          new Date(a.latestCertificate!.expiresAt).getTime() -
-          new Date(b.latestCertificate!.expiresAt).getTime()
+          new Date(
+            a.latestCertificate?.expiresAt ?? a.providerCertExpiresAt!
+          ).getTime() -
+          new Date(
+            b.latestCertificate?.expiresAt ?? b.providerCertExpiresAt!
+          ).getTime()
       )
       .slice(0, 4);
   }, [sites]);
@@ -148,7 +155,9 @@ export function DashboardPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {nextRenewals.map((site) => {
-                const days = daysUntil(site.latestCertificate?.expiresAt || null);
+                const expiresAt =
+                  site.latestCertificate?.expiresAt ?? site.providerCertExpiresAt ?? null;
+                const days = daysUntil(expiresAt);
                 return (
                   <div key={site.id} className="rounded-2xl border border-border bg-white/70 p-4">
                     <div className="flex items-center justify-between">
@@ -161,7 +170,7 @@ export function DashboardPage() {
                       </Badge>
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      到期时间：{formatDate(site.latestCertificate?.expiresAt || null)}
+                      到期时间：{formatDate(expiresAt)}
                     </p>
                   </div>
                 );

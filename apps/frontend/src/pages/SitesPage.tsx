@@ -193,9 +193,14 @@ export function SitesPage() {
             </TableHeader>
             <TableBody>
               {sites.map((site) => {
-                const days = daysUntil(site.latestCertificate?.expiresAt || null);
+                const providerExpiresAt =
+                  site.providerCertExpiresAt || site.provider_cert_expires_at || null;
+                const latestExpiresAt = site.latestCertificate?.expiresAt || null;
+                const displayExpiresAt = latestExpiresAt ?? providerExpiresAt;
+                const days = daysUntil(displayExpiresAt);
                 const providerStatus = site.providerStatus || site.provider_status;
                 const providerHttps = site.providerHttps || site.provider_https;
+                const hasLatest = Boolean(site.latestCertificate);
                 return (
                   <TableRow key={site.id}>
                     <TableCell>
@@ -205,16 +210,20 @@ export function SitesPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {site.latestCertificate ? (
+                      {hasLatest ? (
                         <Badge variant={days !== null && days <= 7 ? "warning" : "success"}>
                           {site.latestCertificate.status}
+                        </Badge>
+                      ) : providerExpiresAt ? (
+                        <Badge variant={days !== null && days <= 0 ? "warning" : "muted"}>
+                          云端证书
                         </Badge>
                       ) : (
                         <Badge variant="muted">未签发</Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      {site.latestCertificate ? formatDate(site.latestCertificate.expiresAt) : "-"}
+                      {displayExpiresAt ? formatDate(displayExpiresAt) : "-"}
                     </TableCell>
                     <TableCell>
                       {providerStatus ? (

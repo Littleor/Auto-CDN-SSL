@@ -37,6 +37,9 @@ export async function issueAcme(domain: string, sans: string[]): Promise<IssuedC
   if (!env.ACME_ACCOUNT_EMAIL) {
     throw new Error("ACME_ACCOUNT_EMAIL is required for Let's Encrypt issuance");
   }
+  if (env.ACME_ACCOUNT_EMAIL.toLowerCase().endsWith("@example.com")) {
+    throw new Error("ACME_ACCOUNT_EMAIL must be a real email (example.com is not allowed)");
+  }
   const accountKey = await loadAccountKey();
   const client = new acme.Client({
     directoryUrl: env.ACME_DIRECTORY_URL,

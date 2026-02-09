@@ -4,6 +4,8 @@ type TencentDomainInfo = {
   domain: string;
   status: string | null;
   https: string | null;
+  certExpiresAt: string | null;
+  certName: string | null;
 };
 
 export async function deployToTencentCdn(params: {
@@ -101,6 +103,8 @@ export async function listTencentDomains(config: Record<string, any>): Promise<T
   }
 
   const domainHttps = new Map<string, string | null>();
+  const domainCertExpire = new Map<string, string | null>();
+  const domainCertName = new Map<string, string | null>();
   let cfgOffset = 0;
   const cfgLimit = 100;
   while (true) {
@@ -111,7 +115,12 @@ export async function listTencentDomains(config: Record<string, any>): Promise<T
       const domain = item?.Domain;
       if (!domain) continue;
       const https = item?.Https?.SslStatus ?? item?.Https?.Switch ?? null;
+      const certInfo = item?.Https?.CertInfo ?? null;
+      const certExpiresAt = certInfo?.ExpireTime ?? null;
+      const certName = certInfo?.CertName ?? certInfo?.CertId ?? null;
       domainHttps.set(domain, https);
+      domainCertExpire.set(domain, certExpiresAt);
+      domainCertName.set(domain, certName);
     }
     if (cfgOffset + cfgLimit >= total) break;
     cfgOffset += cfgLimit;
@@ -121,6 +130,8 @@ export async function listTencentDomains(config: Record<string, any>): Promise<T
   return Array.from(domains).map((domain) => ({
     domain,
     status: domainStatus.get(domain) ?? null,
-    https: domainHttps.get(domain) ?? null
+    https: domainHttps.get(domain) ?? null,
+    certExpiresAt: domainCertExpire.get(domain) ?? null,
+    certName: domainCertName.get(domain) ?? null
   }));
 }

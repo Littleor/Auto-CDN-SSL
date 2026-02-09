@@ -8,6 +8,8 @@ export type SyncedDomain = {
   domain: string;
   status: string | null;
   https: string | null;
+  certExpiresAt: string | null;
+  certName: string | null;
 };
 
 export async function syncProviderSites(userId: string, credential: ProviderCredential) {
@@ -34,12 +36,14 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
     `INSERT INTO sites (
       id, user_id, name, domain, provider_credential_id, certificate_source,
       auto_renew, renew_days_before, status, provider_status, provider_https,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      provider_cert_expires_at, provider_cert_name, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(user_id, domain) DO UPDATE SET
       provider_credential_id = excluded.provider_credential_id,
       provider_status = excluded.provider_status,
       provider_https = excluded.provider_https,
+      provider_cert_expires_at = excluded.provider_cert_expires_at,
+      provider_cert_name = excluded.provider_cert_name,
       updated_at = excluded.updated_at`
   );
 
@@ -65,6 +69,8 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
       "active",
       item.status,
       item.https,
+      item.certExpiresAt,
+      item.certName,
       now,
       now
     );
