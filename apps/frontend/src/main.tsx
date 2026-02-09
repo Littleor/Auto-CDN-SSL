@@ -11,14 +11,35 @@ function injectAnalyticsSnippet(snippet?: string) {
   if (!snippet || typeof document === "undefined") return;
   const trimmed = snippet.trim();
   if (!trimmed) return;
+  const normalizeSrc = (value: string) => value.trim().replace(/^['"]+|['"]+$/g, "");
+
+  if (!trimmed.includes("<script")) {
+    const src = normalizeSrc(trimmed);
+    if (!src) return;
+    if (document.querySelector(`script[src="${src}"]`)) return;
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = src;
+    script.setAttribute("data-analytics", "env");
+    document.head.appendChild(script);
+    return;
+  }
   const container = document.createElement("div");
   container.innerHTML = trimmed;
   const scriptTag = container.querySelector("script");
   if (!scriptTag) return;
   const src = scriptTag.getAttribute("src");
-  if (src && document.querySelector(`script[src="${src}"]`)) return;
+  const normalizedSrc = src ? normalizeSrc(src) : null;
+  if (normalizedSrc && document.querySelector(`script[src="${normalizedSrc}"]`)) return;
   const script = document.createElement("script");
   for (const attr of Array.from(scriptTag.attributes)) {
+    if (attr.name === "src") {
+      const normalized = normalizeSrc(attr.value);
+      if (normalized) {
+        script.setAttribute(attr.name, normalized);
+      }
+      continue;
+    }
     script.setAttribute(attr.name, attr.value);
   }
   if (scriptTag.textContent) {
