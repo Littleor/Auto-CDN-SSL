@@ -9,6 +9,12 @@
 
 ## 本地启动
 
+### 一键启动（前后端）
+```bash
+cd /Users/littleor/Project/Interest/auto-ssl
+yarn dev
+```
+
 ### 后端
 ```bash
 cd /Users/littleor/Project/Interest/auto-ssl/apps/backend

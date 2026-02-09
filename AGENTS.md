@@ -6,6 +6,12 @@
 - `/Users/littleor/Project/Interest/auto-ssl/docs/PRD.md`：产品需求文档
 
 ## 本地启动
+### 一键启动（前后端）
+```bash
+cd /Users/littleor/Project/Interest/auto-ssl
+yarn dev
+```
+
 ### 后端
 ```bash
 cd /Users/littleor/Project/Interest/auto-ssl/apps/backend

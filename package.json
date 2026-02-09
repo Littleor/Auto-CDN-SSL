@@ -1,8 +1,17 @@
 {
   "name": "auto-ssl",
   "private": true,
-  "packageManager": "yarn@4.6.0",
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n backend,frontend -c blue,green \"yarn workspace auto-ssl-backend dev\" \"yarn workspace frontend dev\"",
+    "dev:backend": "yarn workspace auto-ssl-backend dev",
+    "dev:frontend": "yarn workspace frontend dev",
+    "test": "yarn workspace auto-ssl-backend test",
+    "build": "yarn workspace frontend build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }
