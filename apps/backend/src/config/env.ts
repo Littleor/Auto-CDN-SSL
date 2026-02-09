@@ -14,7 +14,7 @@ const EnvSchema = z.object({
   DATA_ENCRYPTION_KEY: z.string().min(8, "DATA_ENCRYPTION_KEY is required"),
   ACME_DIRECTORY_URL: z
     .string()
-    .default("https://acme-staging-v02.api.letsencrypt.org/directory"),
+    .default("https://acme-v02.api.letsencrypt.org/directory"),
   ACME_ACCOUNT_EMAIL: z.string().email().optional(),
   ACME_HTTP_HOST: z.string().optional(),
   ACME_HTTP_PORT: z.coerce.number().default(80),
