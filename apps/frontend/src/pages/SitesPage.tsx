@@ -15,7 +15,9 @@ const defaultForm = {
   name: "",
   domain: "",
   providerCredentialId: "",
+  dnsCredentialId: "",
   certificateSource: "self_signed",
+  acmeChallengeType: "http-01",
   autoRenew: true,
   renewDaysBefore: 30
 };
@@ -34,6 +36,10 @@ export function SitesPage() {
   const jobTimers = useRef<Record<string, number>>({});
 
   const providerOptions = useMemo(() => providers, [providers]);
+  const dnsOptions = useMemo(
+    () => providers.filter((provider) => provider.providerType === "tencent"),
+    [providers]
+  );
 
   const fetchData = () => {
     if (!accessToken) return;
@@ -64,7 +70,9 @@ export function SitesPage() {
             name: form.name,
             domain: form.domain,
             providerCredentialId: form.providerCredentialId || null,
+            dnsCredentialId: form.dnsCredentialId || null,
             certificateSource: form.certificateSource,
+            acmeChallengeType: form.acmeChallengeType,
             autoRenew: form.autoRenew,
             renewDaysBefore: Number(form.renewDaysBefore)
           })
@@ -197,6 +205,43 @@ export function SitesPage() {
                   </SelectContent>
                 </Select>
               </div>
+              {form.certificateSource === "letsencrypt" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">验证方式</label>
+                  <Select
+                    value={form.acmeChallengeType}
+                    onValueChange={(value) => setForm({ ...form, acmeChallengeType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择验证方式" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="http-01">HTTP-01（需开放 80 端口）</SelectItem>
+                      <SelectItem value="dns-01">DNS-01（腾讯云 DNS）</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {form.certificateSource === "letsencrypt" && form.acmeChallengeType === "dns-01" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">DNS 凭据（腾讯云）</label>
+                  <Select
+                    value={form.dnsCredentialId}
+                    onValueChange={(value) => setForm({ ...form, dnsCredentialId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择 DNS 凭据" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dnsOptions.map((provider) => (
+                        <SelectItem key={provider.id} value={provider.id}>
+                          {provider.name} ({provider.providerType})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-sm font-medium">CDN 平台凭据</label>
                 <Select

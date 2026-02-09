@@ -4,6 +4,8 @@ import crypto from "node:crypto";
 import * as acme from "acme-client";
 import { env } from "../../config/env";
 import { setChallenge, removeChallenge } from "./challengeStore";
+import { createTxtRecord, deleteRecord, TencentDnsConfig } from "../../providers/tencentDns";
+import { setDnsRecord, getDnsRecord, removeDnsRecord } from "./dnsRecordStore";
 import { IssuedCertificate } from "./selfSignedIssuer";
 
 const accountStorePath = path.resolve(process.cwd(), "data", "acme-account.json");
@@ -33,7 +35,21 @@ function parseExpiresAt(certPem: string): string {
   return new Date(x509.validTo).toISOString();
 }
 
-export async function issueAcme(domain: string, sans: string[]): Promise<IssuedCertificate> {
+type AcmeOptions = {
+  challengeType?: "http-01" | "dns-01";
+  dnsConfig?: TencentDnsConfig;
+  onMessage?: (message: string) => void;
+};
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function issueAcme(
+  domain: string,
+  sans: string[],
+  options: AcmeOptions = {}
+): Promise<IssuedCertificate> {
   if (!env.ACME_ACCOUNT_EMAIL) {
     throw new Error("ACME_ACCOUNT_EMAIL is required for Let's Encrypt issuance");
   }
@@ -56,18 +72,50 @@ export async function issueAcme(domain: string, sans: string[]): Promise<IssuedC
     altNames: [domain, ...sans]
   });
 
+  const challengeType = options.challengeType ?? "http-01";
+  const dnsConfig = options.dnsConfig;
+
   try {
     const cert = await client.auto({
       csr,
       email: env.ACME_ACCOUNT_EMAIL,
       termsOfServiceAgreed: true,
-      challengePriority: ["http-01"],
+      challengePriority: [challengeType],
       skipChallengeVerification: env.ACME_SKIP_LOCAL_VERIFY,
       challengeCreateFn: async (_authz, challenge, keyAuthorization) => {
-        setChallenge(challenge.token, keyAuthorization);
+        if (challengeType === "http-01") {
+          options.onMessage?.("写入 HTTP-01 校验文件");
+          setChallenge(challenge.token, keyAuthorization);
+          return;
+        }
+        if (!dnsConfig) {
+          throw new Error("DNS 凭据未配置");
+        }
+        options.onMessage?.("写入 DNS TXT 记录");
+        const record = await createTxtRecord({
+          domain: _authz.identifier.value,
+          value: keyAuthorization,
+          config: dnsConfig,
+          ttl: env.ACME_DNS_TTL
+        });
+        setDnsRecord(challenge.token, record);
+        const waitSeconds = env.ACME_DNS_WAIT_SECONDS;
+        if (waitSeconds > 0) {
+          options.onMessage?.(`等待 DNS 解析生效（约 ${waitSeconds}s）`);
+          await sleep(waitSeconds * 1000);
+        }
       },
       challengeRemoveFn: async (_authz, challenge, _keyAuthorization) => {
-        removeChallenge(challenge.token);
+        if (challengeType === "http-01") {
+          removeChallenge(challenge.token);
+          return;
+        }
+        if (!dnsConfig) return;
+        const record = getDnsRecord(challenge.token);
+        if (record) {
+          await deleteRecord({ record, config: dnsConfig });
+          removeDnsRecord(challenge.token);
+        }
       }
     });
 

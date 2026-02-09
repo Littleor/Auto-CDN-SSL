@@ -5,6 +5,7 @@ import { issueSelfSigned } from "./issuers/selfSignedIssuer";
 import { issueAcme } from "./issuers/acmeIssuer";
 import { createJob, finishJob, startJob, updateJobMessage } from "./jobService";
 import { Site } from "./siteService";
+import { getProviderCredential, decryptProviderConfig } from "./providerService";
 
 export type CertificateRecord = {
   id: string;
@@ -92,7 +93,25 @@ async function runIssueJob(site: Site, jobId: string) {
   let cert;
   if (site.certificate_source === "letsencrypt") {
     updateJobMessage(jobId, "进行 ACME 校验");
-    cert = await issueAcme(site.domain, sans);
+    let dnsConfig = undefined;
+    if (site.acme_challenge_type === "dns-01") {
+      if (!site.dns_credential_id) {
+        throw new Error("DNS 凭据未配置");
+      }
+      const credential = getProviderCredential(site.user_id, site.dns_credential_id);
+      if (!credential) {
+        throw new Error("DNS 凭据不存在");
+      }
+      if (credential.provider_type !== "tencent") {
+        throw new Error("当前仅支持腾讯云 DNS");
+      }
+      dnsConfig = decryptProviderConfig(credential) as any;
+    }
+    cert = await issueAcme(site.domain, sans, {
+      challengeType: site.acme_challenge_type ?? "http-01",
+      dnsConfig,
+      onMessage: (message) => updateJobMessage(jobId, message)
+    });
   } else {
     updateJobMessage(jobId, "生成自签证书");
     cert = issueSelfSigned(site.domain, sans);

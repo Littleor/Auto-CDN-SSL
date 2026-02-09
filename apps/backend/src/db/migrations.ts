@@ -114,5 +114,12 @@ export const migrations: Migration[] = [
     sql: `
     ALTER TABLE sites ADD COLUMN provider_cert_deploy_at TEXT;
     `
+  },
+  {
+    id: "005_acme_dns_fields",
+    sql: `
+    ALTER TABLE sites ADD COLUMN dns_credential_id TEXT;
+    ALTER TABLE sites ADD COLUMN acme_challenge_type TEXT DEFAULT 'http-01';
+    `
   }
 ];
