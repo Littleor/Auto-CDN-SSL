@@ -14,7 +14,7 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
       providers: [
         {
           type: "tencent",
-          fields: ["secretId", "secretKey", "region"]
+          fields: ["secretId", "secretKey"]
         },
         {
           type: "qiniu",

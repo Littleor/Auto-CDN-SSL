@@ -13,7 +13,6 @@ const initialForm = {
   name: "",
   secretId: "",
   secretKey: "",
-  region: "ap-guangzhou",
   accessKey: ""
 };
 
@@ -41,7 +40,7 @@ export function ProvidersPage() {
     try {
       const config =
         form.providerType === "tencent"
-          ? { secretId: form.secretId, secretKey: form.secretKey, region: form.region }
+          ? { secretId: form.secretId, secretKey: form.secretKey }
           : { accessKey: form.accessKey, secretKey: form.secretKey };
 
       await apiRequest(
@@ -129,13 +128,6 @@ export function ProvidersPage() {
                     <Input
                       value={form.secretKey}
                       onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Region</label>
-                    <Input
-                      value={form.region}
-                      onChange={(e) => setForm({ ...form, region: e.target.value })}
                     />
                   </div>
                 </>

@@ -47,8 +47,7 @@ describe("site + cert + deploy", () => {
         name: "TencentProd",
         config: {
           secretId: "secret-id-123456",
-          secretKey: "secret-key-123456",
-          region: "ap-guangzhou"
+          secretKey: "secret-key-123456"
         }
       }
     });

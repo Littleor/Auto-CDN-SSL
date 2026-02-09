@@ -8,7 +8,6 @@ export async function deployToTencentCdn(params: {
 }) {
   const secretId = params.config.secretId as string | undefined;
   const secretKey = params.config.secretKey as string | undefined;
-  const region = (params.config.region as string | undefined) ?? "ap-guangzhou";
   if (!secretId || !secretKey) {
     throw new Error("Tencent credentials missing");
   }
@@ -21,7 +20,7 @@ export async function deployToTencentCdn(params: {
 
   const client = new Client({
     credential: { secretId, secretKey },
-    region,
+    region: "",
     profile: {
       httpProfile: {
         endpoint: "cdn.tencentcloudapi.com"

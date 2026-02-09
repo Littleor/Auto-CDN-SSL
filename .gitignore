@@ -32,6 +32,7 @@ yarn-error.log*
 # Prisma / DB
 **/*.sqlite
 **/*.db
+data/
 
 # Coverage
 coverage

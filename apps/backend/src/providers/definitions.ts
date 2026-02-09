@@ -5,8 +5,7 @@ export type ProviderType = z.infer<typeof ProviderTypeSchema>;
 
 export const TencentConfigSchema = z.object({
   secretId: z.string().min(8),
-  secretKey: z.string().min(8),
-  region: z.string().default("ap-guangzhou")
+  secretKey: z.string().min(8)
 });
 
 export const QiniuConfigSchema = z.object({
