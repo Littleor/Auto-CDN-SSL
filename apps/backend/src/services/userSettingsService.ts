@@ -70,17 +70,17 @@ function getDefaults(userId: string): Defaults {
   };
 }
 
-export function getUserSettings(userId: string): UserSettings | null {
+export async function getUserSettings(userId: string): Promise<UserSettings | null> {
   const db = getDb();
-  const row = db
+  const row = (await db
     .prepare("SELECT * FROM user_settings WHERE user_id = ?")
-    .get(userId) as UserSettings | undefined;
+    .get(userId)) as UserSettings | undefined;
   return row ?? null;
 }
 
-export function getResolvedUserSettings(userId: string): ResolvedUserSettings {
+export async function getResolvedUserSettings(userId: string): Promise<ResolvedUserSettings> {
   const defaults = getDefaults(userId);
-  const row = getUserSettings(userId);
+  const row = await getUserSettings(userId);
   if (!row) {
     return defaults;
   }
@@ -102,7 +102,7 @@ export function getResolvedUserSettings(userId: string): ResolvedUserSettings {
   };
 }
 
-export function upsertUserSettings(params: {
+export async function upsertUserSettings(params: {
   userId: string;
   renewalHour: number;
   renewalMinute: number;
@@ -116,34 +116,36 @@ export function upsertUserSettings(params: {
   const db = getDb();
   const now = new Date().toISOString();
   const id = nanoid();
-  db.prepare(
-    `INSERT INTO user_settings (
-      id, user_id, renewal_hour, renewal_minute, renewal_threshold_days,
-      acme_account_email, acme_directory_url, acme_skip_local_verify,
-      acme_dns_wait_seconds, acme_dns_ttl, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(user_id) DO UPDATE SET
-      renewal_hour = excluded.renewal_hour,
-      renewal_minute = excluded.renewal_minute,
-      renewal_threshold_days = excluded.renewal_threshold_days,
-      acme_account_email = excluded.acme_account_email,
-      acme_directory_url = excluded.acme_directory_url,
-      acme_skip_local_verify = excluded.acme_skip_local_verify,
-      acme_dns_wait_seconds = excluded.acme_dns_wait_seconds,
-      acme_dns_ttl = excluded.acme_dns_ttl,
-      updated_at = excluded.updated_at`
-  ).run(
-    id,
-    params.userId,
-    params.renewalHour,
-    params.renewalMinute,
-    params.renewalThresholdDays,
-    params.acmeAccountEmail,
-    params.acmeDirectoryUrl,
-    params.acmeSkipLocalVerify ? 1 : 0,
-    params.acmeDnsWaitSeconds,
-    params.acmeDnsTtl,
-    now,
-    now
-  );
+  await db
+    .prepare(
+      `INSERT INTO user_settings (
+        id, user_id, renewal_hour, renewal_minute, renewal_threshold_days,
+        acme_account_email, acme_directory_url, acme_skip_local_verify,
+        acme_dns_wait_seconds, acme_dns_ttl, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        renewal_hour = VALUES(renewal_hour),
+        renewal_minute = VALUES(renewal_minute),
+        renewal_threshold_days = VALUES(renewal_threshold_days),
+        acme_account_email = VALUES(acme_account_email),
+        acme_directory_url = VALUES(acme_directory_url),
+        acme_skip_local_verify = VALUES(acme_skip_local_verify),
+        acme_dns_wait_seconds = VALUES(acme_dns_wait_seconds),
+        acme_dns_ttl = VALUES(acme_dns_ttl),
+        updated_at = VALUES(updated_at)`
+    )
+    .run(
+      id,
+      params.userId,
+      params.renewalHour,
+      params.renewalMinute,
+      params.renewalThresholdDays,
+      params.acmeAccountEmail,
+      params.acmeDirectoryUrl,
+      params.acmeSkipLocalVerify ? 1 : 0,
+      params.acmeDnsWaitSeconds,
+      params.acmeDnsTtl,
+      now,
+      now
+    );
 }

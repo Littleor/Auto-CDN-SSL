@@ -13,7 +13,7 @@ const DomainSettingSchema = z.object({
 const domainSettingsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
     const userId = request.user.sub;
-    const sites = listSites(userId);
+    const sites = await listSites(userId);
     const apexDomains = new Set<string>();
     const inferred = new Map<string, { challengeType: "http-01" | "dns-01"; dnsCredentialId: string | null }>();
 
@@ -33,7 +33,7 @@ const domainSettingsRoutes: FastifyPluginAsync = async (app) => {
       }
     }
 
-    const settings = listDomainSettings(userId);
+    const settings = await listDomainSettings(userId);
     const settingMap = new Map(settings.map((item) => [item.apex_domain, item]));
 
     return Array.from(apexDomains)
@@ -71,7 +71,7 @@ const domainSettingsRoutes: FastifyPluginAsync = async (app) => {
     const params = z.object({ apex: z.string().min(1) }).parse(request.params);
     const body = DomainSettingSchema.parse(request.body);
 
-    const sites = listSites(userId);
+    const sites = await listSites(userId);
     const apexDomains = new Set(
       sites
         .map((site) => getApexDomain(site.domain))
@@ -87,7 +87,7 @@ const domainSettingsRoutes: FastifyPluginAsync = async (app) => {
       if (!dnsCredentialId) {
         return reply.code(400).send({ message: "DNS 凭据未配置" });
       }
-      const credential = getProviderCredential(userId, dnsCredentialId);
+      const credential = await getProviderCredential(userId, dnsCredentialId);
       if (!credential) {
         return reply.code(404).send({ message: "DNS 凭据不存在" });
       }
@@ -98,7 +98,7 @@ const domainSettingsRoutes: FastifyPluginAsync = async (app) => {
       dnsCredentialId = null;
     }
 
-    upsertDomainSetting({
+    await upsertDomainSetting({
       userId,
       apexDomain,
       challengeType: body.challengeType,

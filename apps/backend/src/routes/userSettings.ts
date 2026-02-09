@@ -5,7 +5,7 @@ import { refreshUserSchedule } from "../services/scheduler";
 
 const userSettingsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
-    const settings = getResolvedUserSettings(request.user.sub);
+    const settings = await getResolvedUserSettings(request.user.sub);
     return {
       renewalHour: settings.renewalHour,
       renewalMinute: settings.renewalMinute,
@@ -35,7 +35,7 @@ const userSettingsRoutes: FastifyPluginAsync = async (app) => {
     const accountEmail = body.acmeAccountEmail?.trim() || null;
     const directoryUrl = body.acmeDirectoryUrl?.trim() || null;
 
-    upsertUserSettings({
+    await upsertUserSettings({
       userId: request.user.sub,
       renewalHour: body.renewalHour,
       renewalMinute: body.renewalMinute,
@@ -47,7 +47,7 @@ const userSettingsRoutes: FastifyPluginAsync = async (app) => {
       acmeDnsTtl: body.acmeDnsTtl
     });
 
-    refreshUserSchedule(request.user.sub);
+    await refreshUserSchedule(request.user.sub);
     reply.code(204).send();
   });
 };

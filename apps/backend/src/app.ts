@@ -17,7 +17,7 @@ import deploymentRoutes from "./routes/deployments";
 import jobsRoutes from "./routes/jobs";
 
 export async function buildApp() {
-  migrate();
+  await migrate();
   const app = Fastify({ logger: true });
 
   await app.register(cors, { origin: true });

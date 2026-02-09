@@ -15,9 +15,9 @@ const SiteSchema = z.object({
 
 const siteRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
-    const sites = listSites(request.user.sub);
-    return sites.map((site) => {
-      const cert = getLatestCertificateForSite(site.id);
+    const sites = await listSites(request.user.sub);
+    return Promise.all(sites.map(async (site) => {
+      const cert = await getLatestCertificateForSite(site.id);
       return {
         id: site.id,
         name: site.name,
@@ -41,12 +41,12 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
             }
           : null
       };
-    });
+    }));
   });
 
   app.post("/", { preHandler: [app.authenticate] }, async (request: any, reply) => {
     const body = SiteSchema.parse(request.body);
-    const created = createSite({
+    const created = await createSite({
       userId: request.user.sub,
       name: body.name,
       domain: body.domain,
@@ -60,11 +60,11 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
 
   app.get("/:id", { preHandler: [app.authenticate] }, async (request: any, reply) => {
     const params = z.object({ id: z.string().min(1) }).parse(request.params);
-    const site = getSite(request.user.sub, params.id);
+    const site = await getSite(request.user.sub, params.id);
     if (!site) {
       return reply.code(404).send({ message: "Site not found" });
     }
-    const cert = getLatestCertificateForSite(site.id);
+    const cert = await getLatestCertificateForSite(site.id);
     return {
       id: site.id,
       name: site.name,
@@ -93,7 +93,7 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
   app.patch("/:id", { preHandler: [app.authenticate] }, async (request: any, reply) => {
     const params = z.object({ id: z.string().min(1) }).parse(request.params);
     const body = SiteSchema.parse(request.body);
-    updateSite({
+    await updateSite({
       userId: request.user.sub,
       id: params.id,
       name: body.name,
@@ -109,7 +109,7 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
 
   app.delete("/:id", { preHandler: [app.authenticate] }, async (request: any, reply) => {
     const params = z.object({ id: z.string().min(1) }).parse(request.params);
-    deleteSite(request.user.sub, params.id);
+    await deleteSite(request.user.sub, params.id);
     reply.code(204).send();
   });
 };

@@ -24,29 +24,29 @@ export type CertificateRecord = {
   created_at: string;
 };
 
-export function getLatestCertificateForSite(siteId: string): CertificateRecord | null {
+export async function getLatestCertificateForSite(siteId: string): Promise<CertificateRecord | null> {
   const db = getDb();
-  const row = db
+  const row = (await db
     .prepare(
       `SELECT * FROM certificates WHERE site_id = ? ORDER BY issued_at DESC LIMIT 1`
     )
-    .get(siteId) as CertificateRecord | undefined;
+    .get(siteId)) as CertificateRecord | undefined;
   return row ?? null;
 }
 
-export function listCertificatesForUser(userId: string): CertificateRecord[] {
+export async function listCertificatesForUser(userId: string): Promise<CertificateRecord[]> {
   const db = getDb();
-  return db
+  return (await db
     .prepare(
       `SELECT c.* FROM certificates c
        JOIN sites s ON s.id = c.site_id
        WHERE s.user_id = ?
        ORDER BY c.issued_at DESC`
     )
-    .all(userId) as CertificateRecord[];
+    .all(userId)) as CertificateRecord[];
 }
 
-function insertCertificate(siteId: string, cert: {
+async function insertCertificate(siteId: string, cert: {
   certPem: string;
   keyPem: string;
   chainPem: string;
@@ -54,7 +54,7 @@ function insertCertificate(siteId: string, cert: {
   sans: string[];
   issuedAt: string;
   expiresAt: string;
-}): CertificateRecord {
+}): Promise<CertificateRecord> {
   const db = getDb();
   const record: CertificateRecord = {
     id: nanoid(),
@@ -69,45 +69,47 @@ function insertCertificate(siteId: string, cert: {
     chain_pem_enc: encrypt(cert.chainPem),
     created_at: new Date().toISOString()
   };
-  db.prepare(
-    `INSERT INTO certificates (
-      id, site_id, common_name, sans, status, issued_at, expires_at,
-      cert_pem_enc, key_pem_enc, chain_pem_enc, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    record.id,
-    record.site_id,
-    record.common_name,
-    record.sans,
-    record.status,
-    record.issued_at,
-    record.expires_at,
-    record.cert_pem_enc,
-    record.key_pem_enc,
-    record.chain_pem_enc,
-    record.created_at
-  );
+  await db
+    .prepare(
+      `INSERT INTO certificates (
+        id, site_id, common_name, sans, status, issued_at, expires_at,
+        cert_pem_enc, key_pem_enc, chain_pem_enc, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      record.id,
+      record.site_id,
+      record.common_name,
+      record.sans,
+      record.status,
+      record.issued_at,
+      record.expires_at,
+      record.cert_pem_enc,
+      record.key_pem_enc,
+      record.chain_pem_enc,
+      record.created_at
+    );
   return record;
 }
 
 async function runIssueJob(site: Site, jobId: string, settings?: ResolvedUserSettings) {
-  const resolvedSettings = settings ?? getResolvedUserSettings(site.user_id);
-  updateJobMessage(jobId, "准备证书申请");
+  const resolvedSettings = settings ?? (await getResolvedUserSettings(site.user_id));
+  await updateJobMessage(jobId, "准备证书申请");
   const sans: string[] = [];
   let cert;
   if (site.certificate_source === "letsencrypt") {
-    updateJobMessage(jobId, "进行 ACME 校验");
+    await updateJobMessage(jobId, "进行 ACME 校验");
     let dnsConfig = undefined;
     let challengeType: "http-01" | "dns-01" = "http-01";
     let dnsCredentialId: string | null = null;
     const apexDomain = getApexDomain(site.domain);
     if (apexDomain) {
-      const setting = getDomainSetting(site.user_id, apexDomain);
+      const setting = await getDomainSetting(site.user_id, apexDomain);
       if (setting) {
         challengeType = setting.challenge_type;
         dnsCredentialId = setting.dns_credential_id ?? null;
       } else {
-        const inferred = listSites(site.user_id).find(
+        const inferred = (await listSites(site.user_id)).find(
           (item) =>
             getApexDomain(item.domain) === apexDomain &&
             item.acme_challenge_type === "dns-01" &&
@@ -123,7 +125,7 @@ async function runIssueJob(site: Site, jobId: string, settings?: ResolvedUserSet
       if (!dnsCredentialId) {
         throw new Error("DNS 凭据未配置");
       }
-      const credential = getProviderCredential(site.user_id, dnsCredentialId);
+      const credential = await getProviderCredential(site.user_id, dnsCredentialId);
       if (!credential) {
         throw new Error("DNS 凭据不存在");
       }
@@ -135,39 +137,41 @@ async function runIssueJob(site: Site, jobId: string, settings?: ResolvedUserSet
     cert = await issueAcme(site.domain, sans, {
       challengeType,
       dnsConfig,
-      onMessage: (message) => updateJobMessage(jobId, message),
+      onMessage: (message) => {
+        void updateJobMessage(jobId, message);
+      },
       config: resolvedSettings.acme
     });
   } else {
-    updateJobMessage(jobId, "生成自签证书");
+    await updateJobMessage(jobId, "生成自签证书");
     cert = issueSelfSigned(site.domain, sans);
   }
-  updateJobMessage(jobId, "保存证书");
+  await updateJobMessage(jobId, "保存证书");
   return insertCertificate(site.id, cert);
 }
 
 export async function issueCertificateForSite(site: Site, settings?: ResolvedUserSettings) {
-  const job = createJob(site.id, "renew");
-  startJob(job.id);
+  const job = await createJob(site.id, "renew");
+  await startJob(job.id);
   try {
     const record = await runIssueJob(site, job.id, settings);
-    finishJob(job.id, "success");
+    await finishJob(job.id, "success");
     return record;
   } catch (error: any) {
-    finishJob(job.id, "failed", error?.message ?? "issue failed");
+    await finishJob(job.id, "failed", error?.message ?? "issue failed");
     throw error;
   }
 }
 
-export function enqueueCertificateIssue(site: Site, settings?: ResolvedUserSettings) {
-  const job = createJob(site.id, "renew");
-  startJob(job.id);
+export async function enqueueCertificateIssue(site: Site, settings?: ResolvedUserSettings) {
+  const job = await createJob(site.id, "renew");
+  await startJob(job.id);
   setTimeout(async () => {
     try {
       await runIssueJob(site, job.id, settings);
-      finishJob(job.id, "success");
+      await finishJob(job.id, "success");
     } catch (error: any) {
-      finishJob(job.id, "failed", error?.message ?? "issue failed");
+      await finishJob(job.id, "failed", error?.message ?? "issue failed");
     }
   }, 0);
   return { jobId: job.id };

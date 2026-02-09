@@ -16,21 +16,21 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body);
 
-    const existing = findUserByEmail(body.email);
+    const existing = await findUserByEmail(body.email);
     if (existing) {
       return reply.code(400).send({ message: "Email already exists" });
     }
 
     const passwordHash = await hashPassword(body.password);
-    const user = createUser({
+    const user = await createUser({
       email: body.email,
       name: body.name,
       passwordHash
     });
 
-    refreshUserSchedule(user.id);
+    await refreshUserSchedule(user.id);
 
-    const { token: refreshToken } = createRefreshToken(user.id, env.REFRESH_TOKEN_TTL_DAYS);
+    const { token: refreshToken } = await createRefreshToken(user.id, env.REFRESH_TOKEN_TTL_DAYS);
     const accessToken = await reply.jwtSign({ sub: user.id, email: user.email });
 
     reply.code(201);
@@ -46,7 +46,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       .object({ email: z.string().email(), password: z.string().min(8) })
       .parse(request.body);
 
-    const user = findUserByEmail(body.email);
+    const user = await findUserByEmail(body.email);
     if (!user) {
       return reply.code(401).send({ message: "Invalid credentials" });
     }
@@ -55,7 +55,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(401).send({ message: "Invalid credentials" });
     }
 
-    const { token: refreshToken } = createRefreshToken(user.id, env.REFRESH_TOKEN_TTL_DAYS);
+    const { token: refreshToken } = await createRefreshToken(user.id, env.REFRESH_TOKEN_TTL_DAYS);
     const accessToken = await reply.jwtSign({ sub: user.id, email: user.email });
     return {
       user: { id: user.id, email: user.email, name: user.name },
@@ -66,12 +66,12 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
   app.post("/refresh", async (request, reply) => {
     const body = z.object({ refreshToken: z.string().min(10) }).parse(request.body);
-    const record = findValidRefreshToken(body.refreshToken);
+    const record = await findValidRefreshToken(body.refreshToken);
     if (!record) {
       return reply.code(401).send({ message: "Invalid refresh token" });
     }
 
-    const user = findUserById(record.user_id);
+    const user = await findUserById(record.user_id);
     if (!user) {
       return reply.code(401).send({ message: "Invalid refresh token" });
     }
@@ -82,7 +82,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
   app.post("/logout", async (request, reply) => {
     const body = z.object({ refreshToken: z.string().min(10) }).parse(request.body);
-    revokeRefreshToken(body.refreshToken);
+    await revokeRefreshToken(body.refreshToken);
     return reply.code(204).send();
   });
 

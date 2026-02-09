@@ -11,22 +11,22 @@ export type DomainSetting = {
   updated_at: string;
 };
 
-export function listDomainSettings(userId: string): DomainSetting[] {
+export async function listDomainSettings(userId: string): Promise<DomainSetting[]> {
   const db = getDb();
-  return db
+  return (await db
     .prepare("SELECT * FROM domain_settings WHERE user_id = ? ORDER BY apex_domain ASC")
-    .all(userId) as DomainSetting[];
+    .all(userId)) as DomainSetting[];
 }
 
-export function getDomainSetting(userId: string, apexDomain: string): DomainSetting | null {
+export async function getDomainSetting(userId: string, apexDomain: string): Promise<DomainSetting | null> {
   const db = getDb();
-  const row = db
+  const row = (await db
     .prepare("SELECT * FROM domain_settings WHERE user_id = ? AND apex_domain = ?")
-    .get(userId, apexDomain) as DomainSetting | undefined;
+    .get(userId, apexDomain)) as DomainSetting | undefined;
   return row ?? null;
 }
 
-export function upsertDomainSetting(params: {
+export async function upsertDomainSetting(params: {
   userId: string;
   apexDomain: string;
   challengeType: "http-01" | "dns-01";
@@ -35,21 +35,23 @@ export function upsertDomainSetting(params: {
   const db = getDb();
   const now = new Date().toISOString();
   const id = nanoid();
-  db.prepare(
-    `INSERT INTO domain_settings (
-      id, user_id, apex_domain, challenge_type, dns_credential_id, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(user_id, apex_domain) DO UPDATE SET
-      challenge_type = excluded.challenge_type,
-      dns_credential_id = excluded.dns_credential_id,
-      updated_at = excluded.updated_at`
-  ).run(
-    id,
-    params.userId,
-    params.apexDomain,
-    params.challengeType,
-    params.dnsCredentialId,
-    now,
-    now
-  );
+  await db
+    .prepare(
+      `INSERT INTO domain_settings (
+        id, user_id, apex_domain, challenge_type, dns_credential_id, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        challenge_type = VALUES(challenge_type),
+        dns_credential_id = VALUES(dns_credential_id),
+        updated_at = VALUES(updated_at)`
+    )
+    .run(
+      id,
+      params.userId,
+      params.apexDomain,
+      params.challengeType,
+      params.dnsCredentialId,
+      now,
+      now
+    );
 }

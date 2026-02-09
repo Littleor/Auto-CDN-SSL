@@ -11,10 +11,10 @@ export type RefreshTokenRecord = {
   revoked_at: string | null;
 };
 
-export function createRefreshToken(userId: string, ttlDays: number): {
+export async function createRefreshToken(userId: string, ttlDays: number): Promise<{
   token: string;
   record: RefreshTokenRecord;
-} {
+}> {
   const db = getDb();
   const token = nanoid(64);
   const now = new Date();
@@ -27,38 +27,42 @@ export function createRefreshToken(userId: string, ttlDays: number): {
     created_at: now.toISOString(),
     revoked_at: null
   };
-  db.prepare(
-    `INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at, revoked_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(
-    record.id,
-    record.user_id,
-    record.token_hash,
-    record.expires_at,
-    record.created_at,
-    record.revoked_at
-  );
+  await db
+    .prepare(
+      `INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at, revoked_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      record.id,
+      record.user_id,
+      record.token_hash,
+      record.expires_at,
+      record.created_at,
+      record.revoked_at
+    );
   return { token, record };
 }
 
-export function findValidRefreshToken(token: string): RefreshTokenRecord | null {
+export async function findValidRefreshToken(token: string): Promise<RefreshTokenRecord | null> {
   const db = getDb();
   const hash = hashToken(token);
-  const row = db
+  const row = (await db
     .prepare(
       `SELECT * FROM refresh_tokens
        WHERE token_hash = ? AND revoked_at IS NULL`
     )
-    .get(hash) as RefreshTokenRecord | undefined;
+    .get(hash)) as RefreshTokenRecord | undefined;
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) return null;
   return row;
 }
 
-export function revokeRefreshToken(token: string) {
+export async function revokeRefreshToken(token: string) {
   const db = getDb();
   const hash = hashToken(token);
-  db.prepare(
-    `UPDATE refresh_tokens SET revoked_at = ? WHERE token_hash = ?`
-  ).run(new Date().toISOString(), hash);
+  await db
+    .prepare(
+      `UPDATE refresh_tokens SET revoked_at = ? WHERE token_hash = ?`
+    )
+    .run(new Date().toISOString(), hash);
 }

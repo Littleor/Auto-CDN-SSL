@@ -1,22 +1,27 @@
 import { getDb } from "./index";
 import { migrations } from "./migrations";
 
-export function migrate() {
+export async function migrate() {
   const db = getDb();
-  db.exec(`CREATE TABLE IF NOT EXISTS db_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL);`);
-  const applied = new Set(
-    db.prepare("SELECT id FROM db_migrations").all().map((row: any) => row.id)
+  await db.exec(
+    "CREATE TABLE IF NOT EXISTS db_migrations (id VARCHAR(64) PRIMARY KEY, applied_at VARCHAR(32) NOT NULL);"
   );
+  const appliedRows = await db.prepare("SELECT id FROM db_migrations").all();
+  const applied = new Set(appliedRows.map((row: any) => row.id));
 
   for (const migration of migrations) {
     if (applied.has(migration.id)) continue;
-    db.exec(migration.sql);
-    db
+    await db.exec(migration.sql);
+    await db
       .prepare("INSERT INTO db_migrations (id, applied_at) VALUES (?, ?)")
       .run(migration.id, new Date().toISOString());
   }
 }
 
 if (process.argv[1]?.endsWith("migrate.ts")) {
-  migrate();
+  migrate().catch((error) => {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    process.exit(1);
+  });
 }

@@ -41,18 +41,18 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
       auto_renew, renew_days_before, status, provider_status, provider_https,
       provider_cert_expires_at, provider_cert_name, provider_cert_deploy_at, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(user_id, domain) DO UPDATE SET
-      provider_credential_id = excluded.provider_credential_id,
-      provider_status = excluded.provider_status,
-      provider_https = excluded.provider_https,
-      provider_cert_expires_at = excluded.provider_cert_expires_at,
-      provider_cert_name = excluded.provider_cert_name,
-      provider_cert_deploy_at = excluded.provider_cert_deploy_at,
-      updated_at = excluded.updated_at`
+    ON DUPLICATE KEY UPDATE
+      provider_credential_id = VALUES(provider_credential_id),
+      provider_status = VALUES(provider_status),
+      provider_https = VALUES(provider_https),
+      provider_cert_expires_at = VALUES(provider_cert_expires_at),
+      provider_cert_name = VALUES(provider_cert_name),
+      provider_cert_deploy_at = VALUES(provider_cert_deploy_at),
+      updated_at = VALUES(updated_at)`
   );
 
   for (const item of domains) {
-    const existing = findStmt.get(userId, item.domain) as
+    const existing = (await findStmt.get(userId, item.domain)) as
       | { id: string; name: string }
       | undefined;
     if (existing) {
@@ -61,7 +61,7 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
       created += 1;
     }
 
-    upsertStmt.run(
+    await upsertStmt.run(
       existing?.id ?? nanoid(),
       userId,
       existing?.name ?? item.domain,

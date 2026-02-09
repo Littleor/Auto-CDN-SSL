@@ -22,7 +22,7 @@ export type Site = {
   updated_at: string;
 };
 
-export function createSite(params: {
+export async function createSite(params: {
   userId: string;
   name: string;
   domain: string;
@@ -34,44 +34,46 @@ export function createSite(params: {
   const db = getDb();
   const id = nanoid();
   const now = new Date().toISOString();
-  db.prepare(
-    `INSERT INTO sites (
-      id, user_id, name, domain, provider_credential_id,
-      certificate_source,
-      auto_renew, renew_days_before, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    id,
-    params.userId,
-    params.name,
-    params.domain,
-    params.providerCredentialId,
-    params.certificateSource,
-    params.autoRenew ? 1 : 0,
-    params.renewDaysBefore,
-    "active",
-    now,
-    now
-  );
+  await db
+    .prepare(
+      `INSERT INTO sites (
+        id, user_id, name, domain, provider_credential_id,
+        certificate_source,
+        auto_renew, renew_days_before, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      id,
+      params.userId,
+      params.name,
+      params.domain,
+      params.providerCredentialId,
+      params.certificateSource,
+      params.autoRenew ? 1 : 0,
+      params.renewDaysBefore,
+      "active",
+      now,
+      now
+    );
   return { id, created_at: now, updated_at: now };
 }
 
-export function listSites(userId: string): Site[] {
+export async function listSites(userId: string): Promise<Site[]> {
   const db = getDb();
-  return db
+  return (await db
     .prepare("SELECT * FROM sites WHERE user_id = ? ORDER BY created_at DESC")
-    .all(userId) as Site[];
+    .all(userId)) as Site[];
 }
 
-export function getSite(userId: string, id: string): Site | null {
+export async function getSite(userId: string, id: string): Promise<Site | null> {
   const db = getDb();
-  const row = db
+  const row = (await db
     .prepare("SELECT * FROM sites WHERE id = ? AND user_id = ?")
-    .get(id, userId) as Site | undefined;
+    .get(id, userId)) as Site | undefined;
   return row ?? null;
 }
 
-export function updateSite(params: {
+export async function updateSite(params: {
   userId: string;
   id: string;
   name: string;
@@ -84,27 +86,29 @@ export function updateSite(params: {
 }) {
   const db = getDb();
   const now = new Date().toISOString();
-  db.prepare(
-    `UPDATE sites
-     SET name = ?, domain = ?, provider_credential_id = ?,
-         certificate_source = ?,
-         auto_renew = ?, renew_days_before = ?, status = ?, updated_at = ?
-     WHERE id = ? AND user_id = ?`
-  ).run(
-    params.name,
-    params.domain,
-    params.providerCredentialId,
-    params.certificateSource,
-    params.autoRenew ? 1 : 0,
-    params.renewDaysBefore,
-    params.status,
-    now,
-    params.id,
-    params.userId
-  );
+  await db
+    .prepare(
+      `UPDATE sites
+       SET name = ?, domain = ?, provider_credential_id = ?,
+           certificate_source = ?,
+           auto_renew = ?, renew_days_before = ?, status = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(
+      params.name,
+      params.domain,
+      params.providerCredentialId,
+      params.certificateSource,
+      params.autoRenew ? 1 : 0,
+      params.renewDaysBefore,
+      params.status,
+      now,
+      params.id,
+      params.userId
+    );
 }
 
-export function deleteSite(userId: string, id: string) {
+export async function deleteSite(userId: string, id: string) {
   const db = getDb();
-  db.prepare("DELETE FROM sites WHERE id = ? AND user_id = ?").run(id, userId);
+  await db.prepare("DELETE FROM sites WHERE id = ? AND user_id = ?").run(id, userId);
 }

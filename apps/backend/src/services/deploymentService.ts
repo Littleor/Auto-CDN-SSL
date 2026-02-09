@@ -33,18 +33,20 @@ export async function deployCertificate(params: {
     created_at: new Date().toISOString()
   };
 
-  db.prepare(
-    `INSERT INTO deployments (id, site_id, certificate_id, provider_type, status, message, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    record.id,
-    record.site_id,
-    record.certificate_id,
-    record.provider_type,
-    record.status,
-    record.message,
-    record.created_at
-  );
+  await db
+    .prepare(
+      `INSERT INTO deployments (id, site_id, certificate_id, provider_type, status, message, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      record.id,
+      record.site_id,
+      record.certificate_id,
+      record.provider_type,
+      record.status,
+      record.message,
+      record.created_at
+    );
 
   try {
     const certPem = decrypt(params.certificate.cert_pem_enc);
@@ -69,26 +71,30 @@ export async function deployCertificate(params: {
       throw new Error("Unsupported provider type");
     }
 
-    db.prepare(
-      `UPDATE deployments SET status = ?, message = ? WHERE id = ?`
-    ).run("success", null, record.id);
+    await db
+      .prepare(
+        `UPDATE deployments SET status = ?, message = ? WHERE id = ?`
+      )
+      .run("success", null, record.id);
     return { ...record, status: "success" };
   } catch (error: any) {
-    db.prepare(
-      `UPDATE deployments SET status = ?, message = ? WHERE id = ?`
-    ).run("failed", error?.message ?? "deploy failed", record.id);
+    await db
+      .prepare(
+        `UPDATE deployments SET status = ?, message = ? WHERE id = ?`
+      )
+      .run("failed", error?.message ?? "deploy failed", record.id);
     throw error;
   }
 }
 
-export function listDeployments(userId: string): DeploymentRecord[] {
+export async function listDeployments(userId: string): Promise<DeploymentRecord[]> {
   const db = getDb();
-  return db
+  return (await db
     .prepare(
       `SELECT d.* FROM deployments d
        JOIN sites s ON s.id = d.site_id
        WHERE s.user_id = ?
        ORDER BY d.created_at DESC`
     )
-    .all(userId) as DeploymentRecord[];
+    .all(userId)) as DeploymentRecord[];
 }

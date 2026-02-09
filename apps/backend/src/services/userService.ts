@@ -9,11 +9,11 @@ export type User = {
   created_at: string;
 };
 
-export function createUser(params: {
+export async function createUser(params: {
   email: string;
   name: string;
   passwordHash: string;
-}): User {
+}): Promise<User> {
   const db = getDb();
   const id = nanoid();
   const now = new Date().toISOString();
@@ -21,23 +21,23 @@ export function createUser(params: {
     `INSERT INTO users (id, email, name, password_hash, created_at)
      VALUES (?, ?, ?, ?, ?)`
   );
-  stmt.run(id, params.email, params.name, params.passwordHash, now);
+  await stmt.run(id, params.email, params.name, params.passwordHash, now);
   return { id, email: params.email, name: params.name, password_hash: params.passwordHash, created_at: now };
 }
 
-export function findUserByEmail(email: string): User | null {
+export async function findUserByEmail(email: string): Promise<User | null> {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+  const row = await db.prepare("SELECT * FROM users WHERE email = ?").get(email);
   return row ? (row as User) : null;
 }
 
-export function findUserById(id: string): User | null {
+export async function findUserById(id: string): Promise<User | null> {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+  const row = await db.prepare("SELECT * FROM users WHERE id = ?").get(id);
   return row ? (row as User) : null;
 }
 
-export function listUsers(): User[] {
+export async function listUsers(): Promise<User[]> {
   const db = getDb();
-  return db.prepare("SELECT * FROM users ORDER BY created_at DESC").all() as User[];
+  return (await db.prepare("SELECT * FROM users ORDER BY created_at DESC").all()) as User[];
 }

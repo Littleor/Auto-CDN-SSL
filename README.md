@@ -5,7 +5,7 @@
 ## 技术栈
 - 前端：React + Vite + TypeScript + Tailwind + shadcn 风格组件
 - 后端：Node.js + TypeScript + Fastify
-- 数据库：SQLite（默认）
+- 数据库：MySQL
 
 ## 本地启动
 
@@ -19,7 +19,7 @@ yarn dev
 ```bash
 cd /Users/littleor/Project/Interest/auto-ssl/apps/backend
 cp .env.example .env
-# 填写 JWT_SECRET 与 DATA_ENCRYPTION_KEY
+# 填写 JWT_SECRET 与 DATA_ENCRYPTION_KEY，并配置 MySQL 连接信息
 
 cd /Users/littleor/Project/Interest/auto-ssl
 yarn workspace auto-ssl-backend dev

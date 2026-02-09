@@ -13,7 +13,7 @@ export type ProviderCredential = {
   updated_at: string;
 };
 
-export function createProviderCredential(params: {
+export async function createProviderCredential(params: {
   userId: string;
   providerType: ProviderType;
   name: string;
@@ -23,37 +23,31 @@ export function createProviderCredential(params: {
   const id = nanoid();
   const now = new Date().toISOString();
   const configEnc = encrypt(JSON.stringify(params.config));
-  db.prepare(
-    `INSERT INTO provider_credentials (id, user_id, provider_type, name, config_json, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    id,
-    params.userId,
-    params.providerType,
-    params.name,
-    configEnc,
-    now,
-    now
-  );
+  await db
+    .prepare(
+      `INSERT INTO provider_credentials (id, user_id, provider_type, name, config_json, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(id, params.userId, params.providerType, params.name, configEnc, now, now);
   return { id, created_at: now, updated_at: now };
 }
 
-export function listProviderCredentials(userId: string): Array<ProviderCredential> {
+export async function listProviderCredentials(userId: string): Promise<Array<ProviderCredential>> {
   const db = getDb();
-  return db
+  return (await db
     .prepare("SELECT * FROM provider_credentials WHERE user_id = ? ORDER BY created_at DESC")
-    .all(userId) as ProviderCredential[];
+    .all(userId)) as ProviderCredential[];
 }
 
-export function getProviderCredential(userId: string, id: string): ProviderCredential | null {
+export async function getProviderCredential(userId: string, id: string): Promise<ProviderCredential | null> {
   const db = getDb();
-  const row = db
+  const row = (await db
     .prepare("SELECT * FROM provider_credentials WHERE id = ? AND user_id = ?")
-    .get(id, userId) as ProviderCredential | undefined;
+    .get(id, userId)) as ProviderCredential | undefined;
   return row ?? null;
 }
 
-export function updateProviderCredential(params: {
+export async function updateProviderCredential(params: {
   userId: string;
   id: string;
   name: string;
@@ -62,16 +56,18 @@ export function updateProviderCredential(params: {
   const db = getDb();
   const now = new Date().toISOString();
   const configEnc = encrypt(JSON.stringify(params.config));
-  db.prepare(
-    `UPDATE provider_credentials
-     SET name = ?, config_json = ?, updated_at = ?
-     WHERE id = ? AND user_id = ?`
-  ).run(params.name, configEnc, now, params.id, params.userId);
+  await db
+    .prepare(
+      `UPDATE provider_credentials
+       SET name = ?, config_json = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(params.name, configEnc, now, params.id, params.userId);
 }
 
-export function deleteProviderCredential(userId: string, id: string) {
+export async function deleteProviderCredential(userId: string, id: string) {
   const db = getDb();
-  db.prepare("DELETE FROM provider_credentials WHERE id = ? AND user_id = ?").run(id, userId);
+  await db.prepare("DELETE FROM provider_credentials WHERE id = ? AND user_id = ?").run(id, userId);
 }
 
 export function decryptProviderConfig(row: ProviderCredential): Record<string, unknown> {

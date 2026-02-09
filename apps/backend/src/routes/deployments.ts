@@ -8,7 +8,7 @@ import { getDb } from "../db";
 
 const deploymentRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
-    return listDeployments(request.user.sub);
+    return await listDeployments(request.user.sub);
   });
 
   app.post("/", { preHandler: [app.authenticate] }, async (request: any, reply) => {
@@ -19,7 +19,7 @@ const deploymentRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body);
 
-    const site = getSite(request.user.sub, body.siteId);
+    const site = await getSite(request.user.sub, body.siteId);
     if (!site) {
       return reply.code(404).send({ message: "Site not found" });
     }
@@ -27,7 +27,7 @@ const deploymentRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ message: "Provider credential not set" });
     }
 
-    const credential = getProviderCredential(request.user.sub, site.provider_credential_id);
+    const credential = await getProviderCredential(request.user.sub, site.provider_credential_id);
     if (!credential) {
       return reply.code(404).send({ message: "Provider credential not found" });
     }
@@ -35,11 +35,11 @@ const deploymentRoutes: FastifyPluginAsync = async (app) => {
     let cert = null;
     if (body.certificateId) {
       const db = getDb();
-      cert = db
+      cert = await db
         .prepare("SELECT * FROM certificates WHERE id = ? AND site_id = ?")
         .get(body.certificateId, site.id);
     } else {
-      cert = getLatestCertificateForSite(site.id);
+      cert = await getLatestCertificateForSite(site.id);
     }
     if (!cert) {
       return reply.code(404).send({ message: "Certificate not found" });

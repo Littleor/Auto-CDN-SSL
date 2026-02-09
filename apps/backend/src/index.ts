@@ -5,7 +5,7 @@ import { startScheduler } from "./services/scheduler";
 const app = await buildApp();
 
 if (env.NODE_ENV !== "test") {
-  startScheduler();
+  await startScheduler();
 }
 
 app

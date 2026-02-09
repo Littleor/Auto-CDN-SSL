@@ -5,7 +5,7 @@ import { getSite } from "../services/siteService";
 
 const certificateRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
-    const certs = listCertificatesForUser(request.user.sub);
+    const certs = await listCertificatesForUser(request.user.sub);
     return certs.map((cert) => ({
       id: cert.id,
       siteId: cert.site_id,
@@ -20,7 +20,7 @@ const certificateRoutes: FastifyPluginAsync = async (app) => {
   app.post("/issue", { preHandler: [app.authenticate] }, async (request: any, reply) => {
     const body = z.object({ siteId: z.string().min(1) }).parse(request.body);
     const query = z.object({ mode: z.string().optional() }).parse(request.query ?? {});
-    const site = getSite(request.user.sub, body.siteId);
+    const site = await getSite(request.user.sub, body.siteId);
     if (!site) {
       return reply.code(404).send({ message: "Site not found" });
     }
@@ -37,7 +37,7 @@ const certificateRoutes: FastifyPluginAsync = async (app) => {
       return;
     }
 
-    const job = enqueueCertificateIssue(site);
+    const job = await enqueueCertificateIssue(site);
     reply.code(202).send({ jobId: job.jobId });
   });
 };

@@ -515,6 +515,30 @@ export function SitesPage() {
                   hasRange && normalizedRemaining !== null && totalDays
                     ? `${normalizedRemaining}/${totalDays}`
                     : "-";
+                const progress = hasRange
+                  ? Math.min(
+                      100,
+                      Math.max(
+                        0,
+                        ((Date.now() - new Date(displayIssuedAt!).getTime()) /
+                          (new Date(displayExpiresAt!).getTime() -
+                            new Date(displayIssuedAt!).getTime())) *
+                          100
+                      )
+                    )
+                  : 0;
+                const isOverdue = remainingDays !== null && remainingDays < 0;
+                const isUrgent = remainingDays !== null && remainingDays <= 7;
+                const progressTone = isOverdue
+                  ? "bg-destructive"
+                  : isUrgent
+                    ? "bg-amber-500"
+                    : "bg-emerald-500";
+                const progressTextTone = isOverdue
+                  ? "text-destructive"
+                  : isUrgent
+                    ? "text-amber-600"
+                    : "text-emerald-600";
                 const issueState = issuing[site.id] ?? "idle";
                 const deployState = deploying[site.id] ?? "idle";
                 const actionState = issueState !== "idle" ? issueState : deployState;
@@ -548,18 +572,22 @@ export function SitesPage() {
                     <TableCell>
                       {displayExpiresAt ? formatDate(displayExpiresAt) : "-"}
                     </TableCell>
-                    <TableCell className="w-20 text-xs font-mono">
-                      <span
-                        className={
-                          remainingDays !== null && remainingDays < 0
-                            ? "text-destructive"
-                            : remainingDays !== null && remainingDays <= 7
-                              ? "text-amber-600"
-                              : "text-muted-foreground"
-                        }
-                      >
-                        {ratioText}
-                      </span>
+                    <TableCell className="w-28 text-xs">
+                      {hasRange ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="h-1.5 w-20 rounded-full bg-muted/70">
+                            <div
+                              className={`h-1.5 rounded-full transition-all ${progressTone}`}
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <span className={`font-mono text-[11px] ${progressTextTone}`}>
+                            {ratioText}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {providerStatus ? (
@@ -582,7 +610,7 @@ export function SitesPage() {
                       {providerHttps || "-"}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
                         <Server className="h-3.5 w-3.5" />
                         {site.providerCredentialId ? "已绑定" : "未绑定"}
                       </div>

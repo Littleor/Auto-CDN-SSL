@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 项目结构
-- `/Users/littleor/Project/Interest/auto-ssl/apps/backend`：Fastify + SQLite 后端
+- `/Users/littleor/Project/Interest/auto-ssl/apps/backend`：Fastify + MySQL 后端
 - `/Users/littleor/Project/Interest/auto-ssl/apps/frontend`：React + Vite 前端控制台
 - `/Users/littleor/Project/Interest/auto-ssl/docs/PRD.md`：产品需求文档
 
@@ -36,7 +36,11 @@ yarn workspace frontend dev
 后端（`/Users/littleor/Project/Interest/auto-ssl/apps/backend/.env`）：
 - `JWT_SECRET`：JWT 密钥
 - `DATA_ENCRYPTION_KEY`：AES-256-GCM 密钥
-- `DATABASE_URL`：SQLite 路径
+- `MYSQL_HOST`：MySQL 地址
+- `MYSQL_PORT`：MySQL 端口
+- `MYSQL_USER`：MySQL 用户名
+- `MYSQL_PASSWORD`：MySQL 密码
+- `MYSQL_DATABASE`：MySQL 数据库
 - `ACME_ACCOUNT_EMAIL`：Let's Encrypt 账户邮箱
 - `ACME_DIRECTORY_URL`：ACME 目录地址（默认 staging）
 

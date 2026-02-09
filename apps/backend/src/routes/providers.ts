@@ -31,7 +31,7 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
-    const items = listProviderCredentials(request.user.sub);
+    const items = await listProviderCredentials(request.user.sub);
     return items.map((item) => ({
       id: item.id,
       providerType: item.provider_type,
@@ -57,7 +57,7 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
       QiniuConfigSchema.parse(body.config);
     }
 
-    const created = createProviderCredential({
+    const created = await createProviderCredential({
       userId: request.user.sub,
       providerType: body.providerType,
       name: body.name,
@@ -84,7 +84,7 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
       QiniuConfigSchema.parse(body.config);
     }
 
-    updateProviderCredential({
+    await updateProviderCredential({
       userId: request.user.sub,
       id: params.id,
       name: body.name,
@@ -96,13 +96,13 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
 
   app.delete("/:id", { preHandler: [app.authenticate] }, async (request: any, reply) => {
     const params = z.object({ id: z.string().min(1) }).parse(request.params);
-    deleteProviderCredential(request.user.sub, params.id);
+    await deleteProviderCredential(request.user.sub, params.id);
     reply.code(204).send();
   });
 
   app.post("/:id/sync", { preHandler: [app.authenticate] }, async (request: any, reply) => {
     const params = z.object({ id: z.string().min(1) }).parse(request.params);
-    const credential = getProviderCredential(request.user.sub, params.id);
+    const credential = await getProviderCredential(request.user.sub, params.id);
     if (!credential) {
       return reply.code(404).send({ message: "Provider credential not found" });
     }

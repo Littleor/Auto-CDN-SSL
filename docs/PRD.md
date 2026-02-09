@@ -57,7 +57,7 @@
 ## 6. 技术方案
 - 前端：React + Vite + TypeScript + Tailwind + shadcn 风格组件 + Yarn
 - 后端：Node.js + TypeScript + Fastify
-- 数据库：SQLite（本地/单机），可扩展至 Postgres
+- 数据库：MySQL（默认）
 - 任务调度：Node Cron
 - 证书申请：ACME (Let's Encrypt) + Self-signed（开发环境）
 - CDN SDK：腾讯云官方 SDK、七牛云官方 SDK
