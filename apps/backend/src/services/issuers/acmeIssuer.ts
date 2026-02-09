@@ -25,9 +25,10 @@ async function loadAccountKey(): Promise<string> {
     fs.mkdirSync(dir, { recursive: true });
   }
   const accountKey = await acme.forge.createPrivateKey();
-  const data: AccountStore = { accountKey };
+  const accountKeyPem = typeof accountKey === "string" ? accountKey : accountKey.toString();
+  const data: AccountStore = { accountKey: accountKeyPem };
   fs.writeFileSync(accountStorePath, JSON.stringify(data, null, 2));
-  return accountKey;
+  return accountKeyPem;
 }
 
 function parseExpiresAt(certPem: string): string {

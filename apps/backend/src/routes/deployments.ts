@@ -3,8 +3,7 @@ import { z } from "zod";
 import { listDeployments, deployCertificate } from "../services/deploymentService";
 import { getSite } from "../services/siteService";
 import { getProviderCredential } from "../services/providerService";
-import { getLatestCertificateForSite } from "../services/certificateService";
-import { getDb } from "../db";
+import { getCertificateByIdForSite, getLatestCertificateForSite } from "../services/certificateService";
 
 const deploymentRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
@@ -34,10 +33,7 @@ const deploymentRoutes: FastifyPluginAsync = async (app) => {
 
     let cert = null;
     if (body.certificateId) {
-      const db = getDb();
-      cert = await db
-        .prepare("SELECT * FROM certificates WHERE id = ? AND site_id = ?")
-        .get(body.certificateId, site.id);
+      cert = await getCertificateByIdForSite(site.id, body.certificateId);
     } else {
       cert = await getLatestCertificateForSite(site.id);
     }

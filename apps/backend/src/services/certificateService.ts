@@ -34,6 +34,19 @@ export async function getLatestCertificateForSite(siteId: string): Promise<Certi
   return row ?? null;
 }
 
+export async function getCertificateByIdForSite(
+  siteId: string,
+  certificateId: string
+): Promise<CertificateRecord | null> {
+  const db = getDb();
+  const row = (await db
+    .prepare(
+      `SELECT * FROM certificates WHERE id = ? AND site_id = ?`
+    )
+    .get(certificateId, siteId)) as CertificateRecord | undefined;
+  return row ?? null;
+}
+
 export async function listCertificatesForUser(userId: string): Promise<CertificateRecord[]> {
   const db = getDb();
   return (await db
