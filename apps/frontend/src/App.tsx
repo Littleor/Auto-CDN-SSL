@@ -9,6 +9,7 @@ import { ProvidersPage } from "@/pages/ProvidersPage";
 import { DnsProvidersPage } from "@/pages/DnsProvidersPage";
 import { DomainSettingsPage } from "@/pages/DomainSettingsPage";
 import { DeploymentsPage } from "@/pages/DeploymentsPage";
+import { RenewalSettingsPage } from "@/pages/RenewalSettingsPage";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="providers" element={<ProvidersPage />} />
         <Route path="dns-providers" element={<DnsProvidersPage />} />
         <Route path="deployments" element={<DeploymentsPage />} />
+        <Route path="renewal-settings" element={<RenewalSettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
