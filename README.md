@@ -1,7 +1,5 @@
 # Auto CDN SSL（auto-ssl）
 
-![Auto CDN SSL](./apps/frontend/public/og-image.svg)
-
 中文 | [English](./README.en.md)
 
 面向 CDN 场景的 SSL 证书自动化平台：统一管理多域名证书的**申请 / 续签 / 部署**，让“证书到期”不再靠记忆。

@@ -1,7 +1,5 @@
 # Auto CDN SSL (auto-ssl)
 
-![Auto CDN SSL](./apps/frontend/public/og-image.svg)
-
 English | [中文](./README.md)
 
 A self-hosted SSL automation platform for CDN scenarios: **issue / renew / deploy** certificates in one place, so certificate expiry is no longer a “calendar reminder” problem.
