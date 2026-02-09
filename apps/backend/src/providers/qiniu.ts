@@ -210,7 +210,9 @@ async function qiniuJsonRequest(params: {
   text?: string;
 }> {
   const body = params.payload ? JSON.stringify(params.payload) : "";
-  const token = params.sdk.util.generateAccessToken(params.mac, params.url.toString(), body);
+  // QBox signature only signs body for application/x-www-form-urlencoded.
+  // For JSON APIs, omit body in the signature to avoid BadToken.
+  const token = params.sdk.util.generateAccessToken(params.mac, params.url.toString(), "");
   const response = await fetch(params.url.toString(), {
     method: params.method,
     headers: {
