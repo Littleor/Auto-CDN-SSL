@@ -15,14 +15,14 @@ process.env.SMTP_PASSWORD = process.env.SMTP_PASSWORD ?? "test-password";
 process.env.FROM_EMAIL = process.env.FROM_EMAIL ?? "no_reply@test.local";
 process.env.ACME_ACCOUNT_EMAIL = "test@example.com";
 
-let getDb: typeof import("../db").getDb;
-let closeDb: typeof import("../db").closeDb;
-let migrate: typeof import("../db/migrate").migrate;
+let getDb: typeof import("../db/index.js").getDb;
+let closeDb: typeof import("../db/index.js").closeDb;
+let migrate: typeof import("../db/migrate.js").migrate;
 
 beforeEach(async () => {
   if (!getDb || !closeDb || !migrate) {
-    const dbModule = await import("../db");
-    const migrateModule = await import("../db/migrate");
+    const dbModule = await import("../db/index.js");
+    const migrateModule = await import("../db/migrate.js");
     getDb = dbModule.getDb;
     closeDb = dbModule.closeDb;
     migrate = migrateModule.migrate;
@@ -45,7 +45,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
   if (!closeDb) {
-    const dbModule = await import("../db");
+    const dbModule = await import("../db/index.js");
     closeDb = dbModule.closeDb;
   }
   await closeDb();

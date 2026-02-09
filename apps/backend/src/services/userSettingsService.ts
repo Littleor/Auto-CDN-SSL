@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
-import { env } from "../config/env";
-import { getDb } from "../db";
-import { findUserById } from "./userService";
+import { env } from "../config/env.js";
+import { getDb } from "../db/index.js";
+import { findUserById } from "./userService.js";
 
 export type UserSettings = {
   id: string;

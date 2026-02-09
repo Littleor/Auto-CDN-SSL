@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { getResolvedUserSettings, upsertUserSettings } from "../services/userSettingsService";
-import { refreshUserSchedule } from "../services/scheduler";
+import { getResolvedUserSettings, upsertUserSettings } from "../services/userSettingsService.js";
+import { refreshUserSchedule } from "../services/scheduler.js";
 
 const userSettingsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {

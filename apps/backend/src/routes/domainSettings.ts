@@ -1,9 +1,9 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { listSites } from "../services/siteService";
-import { getProviderCredential } from "../services/providerService";
-import { getApexDomain } from "../utils/domain";
-import { listDomainSettings, upsertDomainSetting } from "../services/domainSettingsService";
+import { listSites } from "../services/siteService.js";
+import { getProviderCredential } from "../services/providerService.js";
+import { getApexDomain } from "../utils/domain.js";
+import { listDomainSettings, upsertDomainSetting } from "../services/domainSettingsService.js";
 
 const DomainSettingSchema = z.object({
   challengeType: z.enum(["http-01", "dns-01"]),

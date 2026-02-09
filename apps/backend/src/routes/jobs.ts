@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { getJobForUser } from "../services/jobService";
+import { getJobForUser } from "../services/jobService.js";
 
 const jobsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/:id", { preHandler: [app.authenticate] }, async (request: any, reply) => {

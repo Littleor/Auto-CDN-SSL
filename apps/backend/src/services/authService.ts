@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
-import { getDb } from "../db";
-import { hashToken } from "../utils/crypto";
+import { getDb } from "../db/index.js";
+import { hashToken } from "../utils/crypto.js";
 
 export type RefreshTokenRecord = {
   id: string;

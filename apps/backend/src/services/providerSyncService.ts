@@ -1,8 +1,8 @@
 import { nanoid } from "nanoid";
-import { getDb } from "../db";
-import { ProviderCredential, decryptProviderConfig } from "./providerService";
-import { listTencentDomains } from "../providers/tencent";
-import { listQiniuDomains } from "../providers/qiniu";
+import { getDb } from "../db/index.js";
+import { ProviderCredential, decryptProviderConfig } from "./providerService.js";
+import { listTencentDomains } from "../providers/tencent.js";
+import { listQiniuDomains } from "../providers/qiniu.js";
 
 export type SyncedDomain = {
   domain: string;

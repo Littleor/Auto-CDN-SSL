@@ -2,11 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import * as acme from "acme-client";
-import { env } from "../../config/env";
-import { setChallenge, removeChallenge } from "./challengeStore";
-import { createTxtRecord, deleteRecord, TencentDnsConfig } from "../../providers/tencentDns";
-import { setDnsRecord, getDnsRecord, removeDnsRecord } from "./dnsRecordStore";
-import { IssuedCertificate } from "./selfSignedIssuer";
+import { env } from "../../config/env.js";
+import { setChallenge, removeChallenge } from "./challengeStore.js";
+import { createTxtRecord, deleteRecord, TencentDnsConfig } from "../../providers/tencentDns.js";
+import { setDnsRecord, getDnsRecord, removeDnsRecord } from "./dnsRecordStore.js";
+import { IssuedCertificate } from "./selfSignedIssuer.js";
 
 const accountStorePath = path.resolve(process.cwd(), "data", "acme-account.json");
 

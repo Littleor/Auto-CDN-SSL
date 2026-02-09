@@ -4,17 +4,17 @@ import jwt from "@fastify/jwt";
 import sensible from "@fastify/sensible";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import { env } from "./config/env";
-import { migrate } from "./db/migrate";
-import { getChallenge } from "./services/issuers/challengeStore";
-import authRoutes from "./routes/auth";
-import providerRoutes from "./routes/providers";
-import siteRoutes from "./routes/sites";
-import domainSettingsRoutes from "./routes/domainSettings";
-import userSettingsRoutes from "./routes/userSettings";
-import certificateRoutes from "./routes/certificates";
-import deploymentRoutes from "./routes/deployments";
-import jobsRoutes from "./routes/jobs";
+import { env } from "./config/env.js";
+import { migrate } from "./db/migrate.js";
+import { getChallenge } from "./services/issuers/challengeStore.js";
+import authRoutes from "./routes/auth.js";
+import providerRoutes from "./routes/providers.js";
+import siteRoutes from "./routes/sites.js";
+import domainSettingsRoutes from "./routes/domainSettings.js";
+import userSettingsRoutes from "./routes/userSettings.js";
+import certificateRoutes from "./routes/certificates.js";
+import deploymentRoutes from "./routes/deployments.js";
+import jobsRoutes from "./routes/jobs.js";
 
 export async function buildApp() {
   await migrate();

@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
-import { getDb } from "../db";
-import { encrypt, decrypt } from "../utils/crypto";
-import { ProviderType } from "../providers/definitions";
+import { getDb } from "../db/index.js";
+import { encrypt, decrypt } from "../utils/crypto.js";
+import { ProviderType } from "../providers/definitions.js";
 
 export type ProviderCredential = {
   id: string;

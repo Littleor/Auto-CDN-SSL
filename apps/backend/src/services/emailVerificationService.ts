@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
-import { getDb } from "../db";
-import { hashToken } from "../utils/crypto";
-import { markUserEmailVerified } from "./userService";
+import { getDb } from "../db/index.js";
+import { hashToken } from "../utils/crypto.js";
+import { markUserEmailVerified } from "./userService.js";
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 

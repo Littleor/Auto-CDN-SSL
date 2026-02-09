@@ -1,10 +1,10 @@
 import { nanoid } from "nanoid";
-import { getDb } from "../db";
-import { decrypt } from "../utils/crypto";
-import { ProviderCredential, decryptProviderConfig } from "./providerService";
-import { CertificateRecord } from "./certificateService";
-import { deployToTencentCdn } from "../providers/tencent";
-import { deployToQiniuCdn } from "../providers/qiniu";
+import { getDb } from "../db/index.js";
+import { decrypt } from "../utils/crypto.js";
+import { ProviderCredential, decryptProviderConfig } from "./providerService.js";
+import { CertificateRecord } from "./certificateService.js";
+import { deployToTencentCdn } from "../providers/tencent.js";
+import { deployToQiniuCdn } from "../providers/qiniu.js";
 
 export type DeploymentRecord = {
   id: string;

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { getDb } from "../db";
+import { getDb } from "../db/index.js";
 
 export type Job = {
   id: string;

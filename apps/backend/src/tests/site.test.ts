@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { buildApp } from "../app";
+import { buildApp } from "../app.js";
 import { vi } from "vitest";
 
 vi.mock("../providers/tencent", () => ({

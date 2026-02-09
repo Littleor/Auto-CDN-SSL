@@ -1,5 +1,5 @@
 import mysql, { Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
-import { env } from "../config/env";
+import { env } from "../config/env.js";
 
 export type DbStatement = {
   run: (...params: any[]) => Promise<ResultSetHeader>;

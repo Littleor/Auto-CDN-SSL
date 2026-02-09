@@ -1,12 +1,12 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { createUser, findUserByEmail, findUserById } from "../services/userService";
-import { hashPassword, verifyPassword } from "../utils/password";
-import { createRefreshToken, findValidRefreshToken, revokeRefreshToken } from "../services/authService";
-import { env } from "../config/env";
-import { refreshUserSchedule } from "../services/scheduler";
-import { createEmailVerification, verifyEmailToken } from "../services/emailVerificationService";
-import { sendVerificationEmail } from "../services/mailer";
+import { createUser, findUserByEmail, findUserById } from "../services/userService.js";
+import { hashPassword, verifyPassword } from "../utils/password.js";
+import { createRefreshToken, findValidRefreshToken, revokeRefreshToken } from "../services/authService.js";
+import { env } from "../config/env.js";
+import { refreshUserSchedule } from "../services/scheduler.js";
+import { createEmailVerification, verifyEmailToken } from "../services/emailVerificationService.js";
+import { sendVerificationEmail } from "../services/mailer.js";
 
 const authRoutes: FastifyPluginAsync = async (app) => {
   app.post("/register", async (request, reply) => {

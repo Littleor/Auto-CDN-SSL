@@ -1,10 +1,10 @@
 import cron, { ScheduledTask } from "node-cron";
-import { Site, listSites } from "./siteService";
-import { getLatestCertificateForSite, issueCertificateForSite } from "./certificateService";
-import { getProviderCredential } from "./providerService";
-import { deployCertificate } from "./deploymentService";
-import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService";
-import { listUsers } from "./userService";
+import { Site, listSites } from "./siteService.js";
+import { getLatestCertificateForSite, issueCertificateForSite } from "./certificateService.js";
+import { getProviderCredential } from "./providerService.js";
+import { deployCertificate } from "./deploymentService.js";
+import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService.js";
+import { listUsers } from "./userService.js";
 
 const scheduledTasks = new Map<string, ScheduledTask>();
 let schedulerStarted = false;

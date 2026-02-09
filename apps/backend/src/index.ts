@@ -1,6 +1,6 @@
-import { buildApp } from "./app";
-import { env } from "./config/env";
-import { startScheduler } from "./services/scheduler";
+import { buildApp } from "./app.js";
+import { env } from "./config/env.js";
+import { startScheduler } from "./services/scheduler.js";
 
 const app = await buildApp();
 

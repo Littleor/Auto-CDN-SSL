@@ -1,4 +1,4 @@
-import { TencentDnsRecord } from "../../providers/tencentDns";
+import { TencentDnsRecord } from "../../providers/tencentDns.js";
 
 const store = new Map<string, TencentDnsRecord>();
 

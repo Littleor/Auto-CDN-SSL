@@ -1,9 +1,9 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { listDeployments, deployCertificate } from "../services/deploymentService";
-import { getSite } from "../services/siteService";
-import { getProviderCredential } from "../services/providerService";
-import { getCertificateByIdForSite, getLatestCertificateForSite } from "../services/certificateService";
+import { listDeployments, deployCertificate } from "../services/deploymentService.js";
+import { getSite } from "../services/siteService.js";
+import { getProviderCredential } from "../services/providerService.js";
+import { getCertificateByIdForSite, getLatestCertificateForSite } from "../services/certificateService.js";
 
 const deploymentRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {

@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { createSite, deleteSite, getSite, listSites, updateSite } from "../services/siteService";
-import { getLatestCertificateForSite } from "../services/certificateService";
+import { createSite, deleteSite, getSite, listSites, updateSite } from "../services/siteService.js";
+import { getLatestCertificateForSite } from "../services/certificateService.js";
 
 const SiteSchema = z.object({
   name: z.string().min(1),

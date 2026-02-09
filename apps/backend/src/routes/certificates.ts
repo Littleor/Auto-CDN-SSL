@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { listCertificatesForUser, issueCertificateForSite, enqueueCertificateIssue } from "../services/certificateService";
-import { getSite } from "../services/siteService";
+import { listCertificatesForUser, issueCertificateForSite, enqueueCertificateIssue } from "../services/certificateService.js";
+import { getSite } from "../services/siteService.js";
 
 const certificateRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {

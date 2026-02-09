@@ -1,5 +1,5 @@
-import { getDb } from "./index";
-import { migrations } from "./migrations";
+import { getDb } from "./index.js";
+import { migrations } from "./migrations.js";
 
 export async function migrate() {
   const db = getDb();

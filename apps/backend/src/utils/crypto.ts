@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { env } from "../config/env";
+import { env } from "../config/env.js";
 
 const key = (() => {
   const raw = env.DATA_ENCRYPTION_KEY;

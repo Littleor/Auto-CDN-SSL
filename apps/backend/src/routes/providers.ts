@@ -1,14 +1,14 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { ProviderTypeSchema, TencentConfigSchema, QiniuConfigSchema } from "../providers/definitions";
+import { ProviderTypeSchema, TencentConfigSchema, QiniuConfigSchema } from "../providers/definitions.js";
 import {
   createProviderCredential,
   deleteProviderCredential,
   getProviderCredential,
   listProviderCredentials,
   updateProviderCredential
-} from "../services/providerService";
-import { syncProviderSites } from "../services/providerSyncService";
+} from "../services/providerService.js";
+import { syncProviderSites } from "../services/providerSyncService.js";
 
 const providerRoutes: FastifyPluginAsync = async (app) => {
   app.get("/catalog", async () => {

@@ -1,14 +1,14 @@
 import { nanoid } from "nanoid";
-import { getDb } from "../db";
-import { encrypt } from "../utils/crypto";
-import { issueSelfSigned } from "./issuers/selfSignedIssuer";
-import { issueAcme } from "./issuers/acmeIssuer";
-import { createJob, finishJob, startJob, updateJobMessage } from "./jobService";
-import { Site, listSites } from "./siteService";
-import { getProviderCredential, decryptProviderConfig } from "./providerService";
-import { getDomainSetting } from "./domainSettingsService";
-import { getApexDomain } from "../utils/domain";
-import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService";
+import { getDb } from "../db/index.js";
+import { encrypt } from "../utils/crypto.js";
+import { issueSelfSigned } from "./issuers/selfSignedIssuer.js";
+import { issueAcme } from "./issuers/acmeIssuer.js";
+import { createJob, finishJob, startJob, updateJobMessage } from "./jobService.js";
+import { Site, listSites } from "./siteService.js";
+import { getProviderCredential, decryptProviderConfig } from "./providerService.js";
+import { getDomainSetting } from "./domainSettingsService.js";
+import { getApexDomain } from "../utils/domain.js";
+import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService.js";
 
 export type CertificateRecord = {
   id: string;
