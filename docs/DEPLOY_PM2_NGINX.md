@@ -20,11 +20,7 @@
 ```bash
 git clone <your-repo-url> auto-ssl
 cd auto-ssl
-
-corepack enable
-corepack prepare yarn@1.22.19 --activate
-
-yarn install --frozen-lockfile
+yarn install
 ```
 
 ## 3) 初始化 MySQL
