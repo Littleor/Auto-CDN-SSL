@@ -79,7 +79,6 @@ yarn dev
 - `CRON_SCHEDULE`：自动续签定时表达式（默认 `0 3 * * *`）
 - `RENEWAL_THRESHOLD_DAYS`：默认提前续签天数（用户未配置时使用）
 - `ACME_DIRECTORY_URL`：ACME 目录地址（默认 Let’s Encrypt）
-- `ACME_HTTP_HOST` / `ACME_HTTP_PORT`：HTTP-01 校验服务参数
 - `ACME_SKIP_LOCAL_VERIFY` / `ACME_DNS_WAIT_SECONDS` / `ACME_DNS_TTL`
 
 ### 前端

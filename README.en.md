@@ -79,7 +79,6 @@ Use the examples as the source of truth: `apps/backend/.env.example`, `apps/fron
 - `CRON_SCHEDULE`: renewal cron expression (default `0 3 * * *`)
 - `RENEWAL_THRESHOLD_DAYS`: default renewal threshold in days (used when user has no override)
 - `ACME_DIRECTORY_URL`: ACME directory URL (default Let’s Encrypt)
-- `ACME_HTTP_HOST` / `ACME_HTTP_PORT`: HTTP-01 challenge settings
 - `ACME_SKIP_LOCAL_VERIFY` / `ACME_DNS_WAIT_SECONDS` / `ACME_DNS_TTL`
 
 ### Frontend
