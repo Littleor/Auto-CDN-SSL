@@ -113,6 +113,12 @@ export function SitesPage() {
     }
   };
 
+  const resolveChallengeType = (site: any) => {
+    const raw = site.acmeChallengeType ?? "http-01";
+    if (raw !== "dns-01") return "http-01";
+    return site.dnsCredentialId ? "dns-01" : "http-01";
+  };
+
   const openEdit = (site: any) => {
     setEditingSite(site);
     setEditForm({
@@ -121,7 +127,7 @@ export function SitesPage() {
       providerCredentialId: site.providerCredentialId ?? "",
       dnsCredentialId: site.dnsCredentialId ?? "",
       certificateSource: site.certificateSource ?? "self_signed",
-      acmeChallengeType: site.acmeChallengeType ?? "http-01",
+      acmeChallengeType: resolveChallengeType(site),
       autoRenew: Boolean(site.autoRenew),
       renewDaysBefore: Number(site.renewDaysBefore ?? 30)
     });
@@ -237,7 +243,16 @@ export function SitesPage() {
           <h2 className="text-2xl font-semibold">网站管理</h2>
           <p className="text-sm text-muted-foreground">为每个站点配置证书来源与 CDN 平台。</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(value) => {
+            setOpen(value);
+            if (value) {
+              setForm(defaultForm);
+              setError(null);
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -366,6 +381,8 @@ export function SitesPage() {
             setEditOpen(value);
             if (!value) {
               setEditingSite(null);
+              setEditForm(defaultForm);
+              setEditError(null);
             }
           }}
         >
