@@ -34,15 +34,15 @@ export function RegisterPage() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 -z-10">
-        <div className="absolute left-16 top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute right-16 bottom-20 h-72 w-72 rounded-full bg-accent/25 blur-3xl" />
+        <div className="absolute left-16 top-20 h-64 w-64 rounded-full bg-primary/12 blur-3xl" />
+        <div className="absolute right-16 bottom-20 h-72 w-72 rounded-full bg-accent/18 blur-3xl" />
       </div>
 
       <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-16">
         <Card className="glass w-full max-w-lg">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-glow">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>

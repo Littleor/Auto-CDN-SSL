@@ -19,18 +19,18 @@ export function AppShell() {
   return (
     <div className="min-h-screen">
       <div className="absolute inset-0 -z-10">
-        <div className="absolute -left-32 top-16 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute right-16 top-28 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
+        <div className="absolute -left-32 top-16 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute right-16 top-28 h-64 w-64 rounded-full bg-accent/15 blur-3xl" />
       </div>
-      <div className="mx-auto flex min-h-screen max-w-[1400px] gap-8 px-6 py-8">
+      <div className="mx-auto flex min-h-screen max-w-[1440px] gap-6 px-6 py-8">
         <div className="w-full lg:hidden">
-          <div className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-3 shadow-soft">
+          <div className="surface flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold">Auto-SSL</p>
+                <p className="font-display text-sm font-semibold tracking-tight">Auto-SSL</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
             </div>
@@ -39,7 +39,7 @@ export function AppShell() {
             </Button>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2 rounded-2xl bg-white/70 p-3 shadow-soft">
+          <div className="surface mt-4 flex flex-wrap gap-2 p-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -48,10 +48,10 @@ export function AppShell() {
                   to={item.to}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition",
+                      "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition",
                       isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-white/60"
+                        ? "bg-foreground/5 text-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-foreground/5"
                     )
                   }
                 >
@@ -62,14 +62,14 @@ export function AppShell() {
             })}
           </div>
         </div>
-        <aside className="hidden w-64 flex-col gap-8 lg:flex">
-          <div className="flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 shadow-soft">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
+        <aside className="hidden w-72 flex-col gap-6 lg:flex">
+          <div className="surface flex items-center gap-3 px-4 py-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold">Auto-SSL</p>
-              <p className="text-xs text-muted-foreground">证书自动续签</p>
+              <p className="font-display text-sm font-semibold tracking-tight">Auto-SSL</p>
+              <p className="text-xs text-muted-foreground">CDN SSL 证书续签</p>
             </div>
           </div>
 
@@ -84,8 +84,8 @@ export function AppShell() {
                     cn(
                       "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition",
                       isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-white/60"
+                        ? "bg-foreground/5 text-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-foreground/5"
                     )
                   }
                 >
@@ -97,7 +97,7 @@ export function AppShell() {
           </nav>
 
           <div className="mt-auto space-y-4">
-            <div className="rounded-2xl bg-white/80 p-4 text-sm shadow-soft">
+            <div className="surface p-4 text-sm">
               <p className="text-xs text-muted-foreground">当前账号</p>
               <p className="mt-2 font-semibold">{user?.email}</p>
             </div>
@@ -109,7 +109,7 @@ export function AppShell() {
         </aside>
 
         <main className="flex-1">
-          <div className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-soft backdrop-blur-xl">
+          <div className="surface rounded-3xl p-6">
             <Outlet />
           </div>
         </main>

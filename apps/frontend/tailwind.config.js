@@ -48,13 +48,13 @@ export default {
         sm: "calc(var(--radius) - 4px)"
       },
       fontFamily: {
-        sans: ["Manrope", "ui-sans-serif", "system-ui"],
-        display: ["Space Grotesk", "ui-sans-serif", "system-ui"],
+        sans: ["Sora", "ui-sans-serif", "system-ui"],
+        display: ["Fraunces", "Sora", "ui-sans-serif", "system-ui"],
         mono: ["IBM Plex Mono", "ui-monospace", "SFMono-Regular"]
       },
       boxShadow: {
-        glow: "0 0 0 1px hsl(var(--ring) / 0.2), 0 10px 30px -12px hsl(var(--primary) / 0.45)",
-        soft: "0 20px 60px -35px hsl(var(--foreground) / 0.4)"
+        glow: "0 0 0 1px hsl(var(--ring) / 0.25), 0 18px 40px -24px hsl(var(--foreground) / 0.5)",
+        soft: "0 24px 60px -40px hsl(var(--foreground) / 0.45)"
       },
       keyframes: {
         float: {
