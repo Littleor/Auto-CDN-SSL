@@ -9,7 +9,9 @@
     "dev:backend": "yarn workspace auto-ssl-backend dev",
     "dev:frontend": "yarn workspace frontend dev",
     "test": "yarn workspace auto-ssl-backend test",
-    "build": "yarn workspace frontend build"
+    "build": "yarn workspace auto-ssl-backend build && yarn workspace frontend build",
+    "build:backend": "yarn workspace auto-ssl-backend build",
+    "build:frontend": "yarn workspace frontend build"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
