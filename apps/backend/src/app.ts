@@ -41,7 +41,7 @@ export async function buildApp() {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: "Auto-SSL API",
+        title: "Auto CDN SSL API",
         version: "0.1.0"
       }
     }

@@ -43,7 +43,7 @@ export function LoginPage() {
                 <ShieldCheck className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Auto-SSL</p>
+                <p className="text-sm text-muted-foreground">Auto CDN SSL</p>
                 <h1 className="font-display text-5xl font-semibold tracking-tight">
                   CDN SSL 证书全生命周期管理
                 </h1>

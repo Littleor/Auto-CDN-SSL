@@ -47,7 +47,7 @@ export function RegisterPage() {
               </div>
               <div>
                 <CardTitle>创建开发者账号</CardTitle>
-                <CardDescription>加入 Auto-SSL 证书自动化平台</CardDescription>
+                <CardDescription>加入 Auto CDN SSL 证书自动化平台</CardDescription>
               </div>
             </div>
           </CardHeader>

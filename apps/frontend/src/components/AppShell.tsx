@@ -31,7 +31,7 @@ export function AppShell() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-display text-sm font-semibold tracking-tight">Auto-SSL</p>
+                <p className="font-display text-sm font-semibold tracking-tight">Auto CDN SSL</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
             </div>
@@ -69,7 +69,7 @@ export function AppShell() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <p className="font-display text-sm font-semibold tracking-tight">Auto-SSL</p>
+              <p className="font-display text-sm font-semibold tracking-tight">Auto CDN SSL</p>
               <p className="text-xs text-muted-foreground">CDN SSL 证书续签</p>
             </div>
           </div>
