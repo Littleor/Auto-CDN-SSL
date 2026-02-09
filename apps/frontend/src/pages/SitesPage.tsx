@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, ShieldCheck, Server } from "lucide-react";
+import { Loader2, Plus, ShieldCheck, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,9 @@ export function SitesPage() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
+  const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
+  const [actionMessage, setActionMessage] = useState<Record<string, string>>({});
 
   const providerOptions = useMemo(() => providers, [providers]);
 
@@ -73,22 +76,40 @@ export function SitesPage() {
 
   const handleIssue = async (siteId: string) => {
     if (!accessToken) return;
-    await apiRequest(
-      "/certificates/issue",
-      { method: "POST", body: JSON.stringify({ siteId }) },
-      accessToken
-    );
-    fetchData();
+    setIssuing((prev) => ({ ...prev, [siteId]: "loading" }));
+    setActionMessage((prev) => ({ ...prev, [siteId]: "正在续签证书..." }));
+    try {
+      await apiRequest(
+        "/certificates/issue",
+        { method: "POST", body: JSON.stringify({ siteId }) },
+        accessToken
+      );
+      setIssuing((prev) => ({ ...prev, [siteId]: "success" }));
+      setActionMessage((prev) => ({ ...prev, [siteId]: "续签成功" }));
+      fetchData();
+    } catch (err: any) {
+      setIssuing((prev) => ({ ...prev, [siteId]: "error" }));
+      setActionMessage((prev) => ({ ...prev, [siteId]: err.message || "续签失败" }));
+    }
   };
 
   const handleDeploy = async (siteId: string) => {
     if (!accessToken) return;
-    await apiRequest(
-      "/deployments",
-      { method: "POST", body: JSON.stringify({ siteId }) },
-      accessToken
-    );
-    fetchData();
+    setDeploying((prev) => ({ ...prev, [siteId]: "loading" }));
+    setActionMessage((prev) => ({ ...prev, [siteId]: "正在部署 CDN..." }));
+    try {
+      await apiRequest(
+        "/deployments",
+        { method: "POST", body: JSON.stringify({ siteId }) },
+        accessToken
+      );
+      setDeploying((prev) => ({ ...prev, [siteId]: "success" }));
+      setActionMessage((prev) => ({ ...prev, [siteId]: "部署成功" }));
+      fetchData();
+    } catch (err: any) {
+      setDeploying((prev) => ({ ...prev, [siteId]: "error" }));
+      setActionMessage((prev) => ({ ...prev, [siteId]: err.message || "部署失败" }));
+    }
   };
 
   return (
@@ -185,6 +206,7 @@ export function SitesPage() {
                 <TableHead>站点</TableHead>
                 <TableHead>证书状态</TableHead>
                 <TableHead>到期时间</TableHead>
+                <TableHead>有效期进度</TableHead>
                 <TableHead>CDN 状态</TableHead>
                 <TableHead>HTTPS</TableHead>
                 <TableHead>平台</TableHead>
@@ -195,12 +217,56 @@ export function SitesPage() {
               {sites.map((site) => {
                 const providerExpiresAt =
                   site.providerCertExpiresAt || site.provider_cert_expires_at || null;
+                const providerDeployAt =
+                  site.providerCertDeployAt || site.provider_cert_deploy_at || null;
                 const latestExpiresAt = site.latestCertificate?.expiresAt || null;
+                const latestIssuedAt = site.latestCertificate?.issuedAt || null;
                 const displayExpiresAt = latestExpiresAt ?? providerExpiresAt;
+                const displayIssuedAt = latestIssuedAt ?? providerDeployAt;
                 const days = daysUntil(displayExpiresAt);
                 const providerStatus = site.providerStatus || site.provider_status;
                 const providerHttps = site.providerHttps || site.provider_https;
                 const hasLatest = Boolean(site.latestCertificate);
+                const hasRange = Boolean(displayIssuedAt && displayExpiresAt);
+                const totalDays = hasRange
+                  ? Math.max(
+                      1,
+                      Math.ceil(
+                        (new Date(displayExpiresAt!).getTime() -
+                          new Date(displayIssuedAt!).getTime()) /
+                          (24 * 60 * 60 * 1000)
+                      )
+                    )
+                  : null;
+                const remainingDays = hasRange
+                  ? Math.ceil(
+                      (new Date(displayExpiresAt!).getTime() - Date.now()) /
+                        (24 * 60 * 60 * 1000)
+                    )
+                  : null;
+                const overdueDays =
+                  remainingDays !== null && remainingDays < 0 ? Math.abs(remainingDays) : 0;
+                const progress = hasRange
+                  ? Math.min(
+                      100,
+                      Math.max(
+                        0,
+                        ((Date.now() - new Date(displayIssuedAt!).getTime()) /
+                          (new Date(displayExpiresAt!).getTime() -
+                            new Date(displayIssuedAt!).getTime())) *
+                          100
+                      )
+                    )
+                  : 0;
+                const issueState = issuing[site.id] ?? "idle";
+                const deployState = deploying[site.id] ?? "idle";
+                const actionState = issueState !== "idle" ? issueState : deployState;
+                const messageClass =
+                  actionState === "error"
+                    ? "text-destructive"
+                    : actionState === "success"
+                      ? "text-emerald-600"
+                      : "text-muted-foreground";
                 return (
                   <TableRow key={site.id}>
                     <TableCell>
@@ -224,6 +290,25 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell>
                       {displayExpiresAt ? formatDate(displayExpiresAt) : "-"}
+                    </TableCell>
+                    <TableCell className="min-w-[220px]">
+                      {hasRange ? (
+                        <div className="space-y-2">
+                          <div className="h-2 w-full rounded-full bg-muted/70">
+                            <div
+                              className="h-2 rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            有效期 {totalDays} 天 · {remainingDays !== null && remainingDays >= 0
+                              ? `剩余 ${remainingDays} 天`
+                              : `已过期 ${overdueDays} 天`}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {providerStatus ? (
@@ -253,14 +338,36 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleIssue(site.id)}>
-                          <ShieldCheck className="mr-1 h-3.5 w-3.5" />
-                          续签
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleIssue(site.id)}
+                          disabled={issueState === "loading"}
+                        >
+                          {issuing[site.id] === "loading" ? (
+                            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+                          )}
+                          {issuing[site.id] === "loading" ? "续签中..." : "续签"}
                         </Button>
-                        <Button variant="secondary" size="sm" onClick={() => handleDeploy(site.id)}>
-                          部署
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleDeploy(site.id)}
+                          disabled={deployState === "loading"}
+                        >
+                          {deploying[site.id] === "loading" ? (
+                            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                          ) : null}
+                          {deploying[site.id] === "loading" ? "部署中..." : "部署"}
                         </Button>
                       </div>
+                      {actionMessage[site.id] && (
+                        <div className={`mt-2 text-xs ${messageClass}`}>
+                          {actionMessage[site.id]}
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

@@ -6,6 +6,7 @@ type QiniuDomainInfo = {
   https: string | null;
   certExpiresAt: string | null;
   certName: string | null;
+  certDeployAt: string | null;
 };
 
 export async function deployToQiniuCdn(params: {
@@ -99,7 +100,8 @@ export async function listQiniuDomains(config: Record<string, any>): Promise<Qin
         status: item.operatingState ?? null,
         https: item.protocol ?? null,
         certExpiresAt: null,
-        certName: null
+        certName: null,
+        certDeployAt: null
       });
     }
 

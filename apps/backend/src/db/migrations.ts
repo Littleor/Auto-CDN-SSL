@@ -108,5 +108,11 @@ export const migrations: Migration[] = [
     ALTER TABLE sites ADD COLUMN provider_cert_expires_at TEXT;
     ALTER TABLE sites ADD COLUMN provider_cert_name TEXT;
     `
+  },
+  {
+    id: "004_provider_cert_deploy_at",
+    sql: `
+    ALTER TABLE sites ADD COLUMN provider_cert_deploy_at TEXT;
+    `
   }
 ];

@@ -15,6 +15,7 @@ export type Site = {
   provider_https?: string | null;
   provider_cert_expires_at?: string | null;
   provider_cert_name?: string | null;
+  provider_cert_deploy_at?: string | null;
   created_at: string;
   updated_at: string;
 };
