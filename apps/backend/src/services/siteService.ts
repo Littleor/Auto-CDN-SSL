@@ -10,6 +10,7 @@ export type Site = {
   certificate_source: "letsencrypt" | "self_signed";
   auto_renew: number;
   renew_days_before: number;
+  auto_deploy: number;
   status: string;
   provider_status?: string | null;
   provider_https?: string | null;
@@ -30,6 +31,7 @@ export async function createSite(params: {
   certificateSource: "letsencrypt" | "self_signed";
   autoRenew: boolean;
   renewDaysBefore: number;
+  autoDeploy?: boolean;
 }) {
   const db = getDb();
   const id = nanoid();
@@ -39,8 +41,8 @@ export async function createSite(params: {
       `INSERT INTO sites (
         id, user_id, name, domain, provider_credential_id,
         certificate_source,
-        auto_renew, renew_days_before, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        auto_renew, renew_days_before, auto_deploy, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       id,
@@ -51,6 +53,7 @@ export async function createSite(params: {
       params.certificateSource,
       params.autoRenew ? 1 : 0,
       params.renewDaysBefore,
+      params.autoDeploy === false ? 0 : 1,
       "active",
       now,
       now
@@ -82,6 +85,7 @@ export async function updateSite(params: {
   certificateSource: "letsencrypt" | "self_signed";
   autoRenew: boolean;
   renewDaysBefore: number;
+  autoDeploy: boolean;
   status: string;
 }) {
   const db = getDb();
@@ -91,7 +95,7 @@ export async function updateSite(params: {
       `UPDATE sites
        SET name = ?, domain = ?, provider_credential_id = ?,
            certificate_source = ?,
-           auto_renew = ?, renew_days_before = ?, status = ?, updated_at = ?
+           auto_renew = ?, renew_days_before = ?, auto_deploy = ?, status = ?, updated_at = ?
        WHERE id = ? AND user_id = ?`
     )
     .run(
@@ -101,6 +105,7 @@ export async function updateSite(params: {
       params.certificateSource,
       params.autoRenew ? 1 : 0,
       params.renewDaysBefore,
+      params.autoDeploy ? 1 : 0,
       params.status,
       now,
       params.id,

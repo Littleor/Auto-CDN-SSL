@@ -184,5 +184,11 @@ export const migrations: Migration[] = [
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `
+  },
+  {
+    id: "009_site_auto_deploy",
+    sql: `
+    ALTER TABLE sites ADD COLUMN auto_deploy TINYINT NOT NULL DEFAULT 1;
+    `
   }
 ];

@@ -10,6 +10,7 @@ const SiteSchema = z.object({
   certificateSource: z.enum(["letsencrypt", "self_signed"]).default("self_signed"),
   autoRenew: z.boolean().default(true),
   renewDaysBefore: z.coerce.number().min(1).max(90).default(30),
+  autoDeploy: z.boolean().default(true),
   status: z.enum(["active", "paused"]).default("active")
 });
 
@@ -31,6 +32,7 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
         certificateSource: site.certificate_source,
         autoRenew: Boolean(site.auto_renew),
         renewDaysBefore: site.renew_days_before,
+        autoDeploy: Boolean(site.auto_deploy),
         status: site.status,
         latestCertificate: cert
           ? {
@@ -53,7 +55,8 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
       providerCredentialId: body.providerCredentialId ?? null,
       certificateSource: body.certificateSource,
       autoRenew: body.autoRenew,
-      renewDaysBefore: body.renewDaysBefore
+      renewDaysBefore: body.renewDaysBefore,
+      autoDeploy: body.autoDeploy
     });
     reply.code(201).send(created);
   });
@@ -78,6 +81,7 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
       certificateSource: site.certificate_source,
       autoRenew: Boolean(site.auto_renew),
       renewDaysBefore: site.renew_days_before,
+      autoDeploy: Boolean(site.auto_deploy),
       status: site.status,
       latestCertificate: cert
         ? {
@@ -102,6 +106,7 @@ const siteRoutes: FastifyPluginAsync = async (app) => {
       certificateSource: body.certificateSource,
       autoRenew: body.autoRenew,
       renewDaysBefore: body.renewDaysBefore,
+      autoDeploy: body.autoDeploy,
       status: body.status
     });
     reply.code(204).send();
