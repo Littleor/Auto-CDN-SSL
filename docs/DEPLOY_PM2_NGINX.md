@@ -71,11 +71,8 @@ VITE_API_URL=/api yarn workspace frontend build
 构建产物在：`apps/frontend/dist`
 
 ## 5) 用 PM2 启动后端
-
-仓库根目录已提供 `ecosystem.config.cjs`（默认把后端跑在 `127.0.0.1:4000`）：
-
 ```bash
-pm2 start ecosystem.config.cjs
+pm2 start dist/index.js --name auto-ssl-backend
 pm2 status
 pm2 logs auto-ssl-backend
 ```
