@@ -33,20 +33,22 @@ export async function buildApp() {
       try {
         await request.jwtVerify();
       } catch (err) {
-        reply.code(401).send({ message: "Unauthorized" });
+        return reply.code(401).send({ message: "Unauthorized" });
       }
     }
   );
 
-  await app.register(swagger, {
-    openapi: {
-      info: {
-        title: "Auto CDN SSL API",
-        version: "0.1.0"
+  if (env.NODE_ENV !== "production") {
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: "Auto CDN SSL API",
+          version: "0.1.0"
+        }
       }
-    }
-  });
-  await app.register(swaggerUi, { routePrefix: "/docs" });
+    });
+    await app.register(swaggerUi, { routePrefix: "/docs" });
+  }
 
   app.get("/health", async () => ({ status: "ok" }));
 

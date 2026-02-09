@@ -46,6 +46,7 @@ yarn workspace frontend dev
 - `SMTP_USER`：SMTP 用户名
 - `SMTP_PASSWORD`：SMTP 密码
 - `FROM_EMAIL`：发件人邮箱
+- `WEB_BASE_URL`：前端控制台地址（用于邮件验证链接）
 - `ACME_ACCOUNT_EMAIL`：Let's Encrypt 账户邮箱
 - `ACME_DIRECTORY_URL`：ACME 目录地址（默认 staging）
 

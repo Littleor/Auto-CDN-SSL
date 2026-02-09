@@ -32,9 +32,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
     await refreshUserSchedule(user.id);
     const verification = await createEmailVerification(user.id);
-    const originHeader = request.headers.origin;
-    const origin = typeof originHeader === "string" ? originHeader : "";
-    const baseUrl = origin || "http://localhost:5173";
+    const baseUrl = env.WEB_BASE_URL.replace(/\/+$/, "");
     const verifyUrl = `${baseUrl}/verify?token=${verification.token}`;
 
     await sendVerificationEmail({
