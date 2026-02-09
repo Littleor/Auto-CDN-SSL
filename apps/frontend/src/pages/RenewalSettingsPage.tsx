@@ -12,11 +12,6 @@ type UserSettingsForm = {
   renewalMinute: number;
   renewalThresholdDays: number;
   autoDeploy: boolean;
-  acmeAccountEmail: string | null;
-  acmeDirectoryUrl: string;
-  acmeSkipLocalVerify: boolean;
-  acmeDnsWaitSeconds: number;
-  acmeDnsTtl: number;
 };
 
 const formatTimeValue = (hour: number, minute: number) =>
@@ -54,12 +49,7 @@ export function RenewalSettingsPage() {
             renewalHour: settings.renewalHour,
             renewalMinute: settings.renewalMinute,
             renewalThresholdDays: settings.renewalThresholdDays,
-            autoDeploy: settings.autoDeploy,
-            acmeAccountEmail: settings.acmeAccountEmail || null,
-            acmeDirectoryUrl: settings.acmeDirectoryUrl || null,
-            acmeSkipLocalVerify: settings.acmeSkipLocalVerify,
-            acmeDnsWaitSeconds: settings.acmeDnsWaitSeconds,
-            acmeDnsTtl: settings.acmeDnsTtl
+            autoDeploy: settings.autoDeploy
           })
         },
         accessToken
@@ -80,9 +70,9 @@ export function RenewalSettingsPage() {
           <SlidersHorizontal className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold">CDN 续签与 ACME 设置</h2>
+          <h2 className="text-2xl font-semibold">CDN 续签设置</h2>
           <p className="text-sm text-muted-foreground">
-            独立管理 CDN SSL 证书续签时间与 ACME 参数。
+            统一管理 CDN SSL 证书续签时间与部署策略。
           </p>
         </div>
       </div>
@@ -139,80 +129,6 @@ export function RenewalSettingsPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">默认续签后自动下发到 CDN 平台。</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>ACME 参数</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!settings ? (
-            <div className="text-sm text-muted-foreground">加载中...</div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">账户邮箱</label>
-                <Input
-                  type="email"
-                  value={settings.acmeAccountEmail ?? ""}
-                  onChange={(e) => updateSettings({ acmeAccountEmail: e.target.value })}
-                  placeholder="acme@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">目录地址</label>
-                <Input
-                  value={settings.acmeDirectoryUrl}
-                  onChange={(e) => updateSettings({ acmeDirectoryUrl: e.target.value })}
-                  placeholder="https://acme-v02.api.letsencrypt.org/directory"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">DNS 等待时间（秒）</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={settings.acmeDnsWaitSeconds}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    if (Number.isNaN(value)) return;
-                    updateSettings({ acmeDnsWaitSeconds: value });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">DNS TTL（秒）</label>
-                <Input
-                  type="number"
-                  min={60}
-                  value={settings.acmeDnsTtl}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    if (Number.isNaN(value)) return;
-                    updateSettings({ acmeDnsTtl: value });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">跳过本地校验</label>
-                <Select
-                  value={settings.acmeSkipLocalVerify ? "true" : "false"}
-                  onValueChange={(value) =>
-                    updateSettings({ acmeSkipLocalVerify: value === "true" })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="false">关闭</SelectItem>
-                    <SelectItem value="true">启用</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           )}

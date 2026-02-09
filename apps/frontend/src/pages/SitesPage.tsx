@@ -20,21 +20,6 @@ const defaultForm = {
   renewDaysBefore: 30
 };
 
-type UserSettingsForm = {
-  renewalHour: number;
-  renewalMinute: number;
-  renewalThresholdDays: number;
-  autoDeploy: boolean;
-  acmeAccountEmail: string | null;
-  acmeDirectoryUrl: string;
-  acmeSkipLocalVerify: boolean;
-  acmeDnsWaitSeconds: number;
-  acmeDnsTtl: number;
-};
-
-const formatTimeValue = (hour: number, minute: number) =>
-  `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-
 export function SitesPage() {
   const { accessToken } = useAuth();
   const [sites, setSites] = useState<any[]>([]);
@@ -43,9 +28,6 @@ export function SitesPage() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [settings, setSettings] = useState<UserSettingsForm | null>(null);
-  const [settingsSaving, setSettingsSaving] = useState(false);
-  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
   const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [issuingAll, setIssuingAll] = useState(false);
   const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
@@ -69,14 +51,8 @@ export function SitesPage() {
     apiRequest<any[]>("/providers", {}, accessToken).then(setProviders);
   };
 
-  const fetchSettings = () => {
-    if (!accessToken) return;
-    apiRequest<UserSettingsForm>("/user-settings", {}, accessToken).then(setSettings);
-  };
-
   useEffect(() => {
     fetchData();
-    fetchSettings();
   }, [accessToken]);
 
   useEffect(() => {
@@ -114,42 +90,6 @@ export function SitesPage() {
       setLoading(false);
     }
   };
-
-  const updateSettings = (patch: Partial<UserSettingsForm>) => {
-    setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
-  };
-
-  const handleSettingsSave = async () => {
-    if (!accessToken || !settings) return;
-    setSettingsSaving(true);
-    setSettingsMessage(null);
-    try {
-      await apiRequest(
-        "/user-settings",
-        {
-          method: "PUT",
-          body: JSON.stringify({
-            renewalHour: settings.renewalHour,
-            renewalMinute: settings.renewalMinute,
-            renewalThresholdDays: settings.renewalThresholdDays,
-            acmeAccountEmail: settings.acmeAccountEmail || null,
-            acmeDirectoryUrl: settings.acmeDirectoryUrl || null,
-            acmeSkipLocalVerify: settings.acmeSkipLocalVerify,
-            acmeDnsWaitSeconds: settings.acmeDnsWaitSeconds,
-            acmeDnsTtl: settings.acmeDnsTtl
-          })
-        },
-        accessToken
-      );
-      setSettingsMessage("已保存");
-      fetchSettings();
-    } catch (err: any) {
-      setSettingsMessage(err.message || "保存失败");
-    } finally {
-      setSettingsSaving(false);
-    }
-  };
-
 
   const handleIssue = async (siteId: string) => {
     if (!accessToken) return;

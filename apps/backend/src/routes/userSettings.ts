@@ -10,12 +10,7 @@ const userSettingsRoutes: FastifyPluginAsync = async (app) => {
       renewalHour: settings.renewalHour,
       renewalMinute: settings.renewalMinute,
       renewalThresholdDays: settings.renewalThresholdDays,
-      autoDeploy: settings.autoDeploy,
-      acmeAccountEmail: settings.acme.accountEmail,
-      acmeDirectoryUrl: settings.acme.directoryUrl,
-      acmeSkipLocalVerify: settings.acme.skipLocalVerify,
-      acmeDnsWaitSeconds: settings.acme.dnsWaitSeconds,
-      acmeDnsTtl: settings.acme.dnsTtl
+      autoDeploy: settings.autoDeploy
     };
   });
 
@@ -25,29 +20,16 @@ const userSettingsRoutes: FastifyPluginAsync = async (app) => {
         renewalHour: z.coerce.number().int().min(0).max(23),
         renewalMinute: z.coerce.number().int().min(0).max(59),
         renewalThresholdDays: z.coerce.number().int().min(1).max(90),
-        autoDeploy: z.coerce.boolean().optional().default(true),
-        acmeAccountEmail: z.string().email().nullable().optional(),
-        acmeDirectoryUrl: z.string().url().nullable().optional(),
-        acmeSkipLocalVerify: z.coerce.boolean(),
-        acmeDnsWaitSeconds: z.coerce.number().int().min(0).max(600),
-        acmeDnsTtl: z.coerce.number().int().min(60).max(86400)
+        autoDeploy: z.coerce.boolean().optional().default(true)
       })
       .parse(request.body);
-
-    const accountEmail = body.acmeAccountEmail?.trim() || null;
-    const directoryUrl = body.acmeDirectoryUrl?.trim() || null;
 
     await upsertUserSettings({
       userId: request.user.sub,
       renewalHour: body.renewalHour,
       renewalMinute: body.renewalMinute,
       renewalThresholdDays: body.renewalThresholdDays,
-      autoDeploy: body.autoDeploy ?? true,
-      acmeAccountEmail: accountEmail,
-      acmeDirectoryUrl: directoryUrl,
-      acmeSkipLocalVerify: body.acmeSkipLocalVerify,
-      acmeDnsWaitSeconds: body.acmeDnsWaitSeconds,
-      acmeDnsTtl: body.acmeDnsTtl
+      autoDeploy: body.autoDeploy ?? true
     });
 
     await refreshUserSchedule(request.user.sub);
