@@ -1,5 +1,11 @@
 import tencentcloud from "tencentcloud-sdk-nodejs";
 
+type TencentDomainInfo = {
+  domain: string;
+  status: string | null;
+  https: string | null;
+};
+
 export async function deployToTencentCdn(params: {
   domain: string;
   certPem: string;
@@ -52,4 +58,69 @@ export async function deployToTencentCdn(params: {
       }
     }
   });
+}
+
+export async function listTencentDomains(config: Record<string, any>): Promise<TencentDomainInfo[]> {
+  const secretId = config.secretId as string | undefined;
+  const secretKey = config.secretKey as string | undefined;
+  if (!secretId || !secretKey) {
+    throw new Error("Tencent credentials missing");
+  }
+
+  const sdk: any = tencentcloud as any;
+  const Client = sdk?.cdn?.v20180606?.Client;
+  if (!Client) {
+    throw new Error("Tencent Cloud CDN SDK not available");
+  }
+
+  const client = new Client({
+    credential: { secretId, secretKey },
+    region: "",
+    profile: {
+      httpProfile: {
+        endpoint: "cdn.tencentcloudapi.com"
+      }
+    }
+  });
+
+  const domainStatus = new Map<string, string | null>();
+  let offset = 0;
+  const limit = 1000;
+  while (true) {
+    const res = await client.DescribeDomains({ Offset: offset, Limit: limit });
+    const items = res?.Domains ?? [];
+    const total = res?.TotalNumber ?? items.length;
+    for (const item of items) {
+      const domain = item?.Domain;
+      if (!domain) continue;
+      const status = item?.Status ?? item?.Disable ?? null;
+      domainStatus.set(domain, status);
+    }
+    if (offset + limit >= total) break;
+    offset += limit;
+  }
+
+  const domainHttps = new Map<string, string | null>();
+  let cfgOffset = 0;
+  const cfgLimit = 100;
+  while (true) {
+    const res = await client.DescribeDomainsConfig({ Offset: cfgOffset, Limit: cfgLimit });
+    const items = res?.Domains ?? [];
+    const total = res?.TotalNumber ?? items.length;
+    for (const item of items) {
+      const domain = item?.Domain;
+      if (!domain) continue;
+      const https = item?.Https?.SslStatus ?? item?.Https?.Switch ?? null;
+      domainHttps.set(domain, https);
+    }
+    if (cfgOffset + cfgLimit >= total) break;
+    cfgOffset += cfgLimit;
+  }
+
+  const domains = new Set([...domainStatus.keys(), ...domainHttps.keys()]);
+  return Array.from(domains).map((domain) => ({
+    domain,
+    status: domainStatus.get(domain) ?? null,
+    https: domainHttps.get(domain) ?? null
+  }));
 }

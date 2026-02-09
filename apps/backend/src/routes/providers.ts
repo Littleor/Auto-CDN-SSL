@@ -4,9 +4,11 @@ import { ProviderTypeSchema, TencentConfigSchema, QiniuConfigSchema } from "../p
 import {
   createProviderCredential,
   deleteProviderCredential,
+  getProviderCredential,
   listProviderCredentials,
   updateProviderCredential
 } from "../services/providerService";
+import { syncProviderSites } from "../services/providerSyncService";
 
 const providerRoutes: FastifyPluginAsync = async (app) => {
   app.get("/catalog", async () => {
@@ -92,6 +94,17 @@ const providerRoutes: FastifyPluginAsync = async (app) => {
     const params = z.object({ id: z.string().min(1) }).parse(request.params);
     deleteProviderCredential(request.user.sub, params.id);
     reply.code(204).send();
+  });
+
+  app.post("/:id/sync", { preHandler: [app.authenticate] }, async (request: any, reply) => {
+    const params = z.object({ id: z.string().min(1) }).parse(request.params);
+    const credential = getProviderCredential(request.user.sub, params.id);
+    if (!credential) {
+      return reply.code(404).send({ message: "Provider credential not found" });
+    }
+
+    const result = await syncProviderSites(request.user.sub, credential);
+    reply.send(result);
   });
 };
 

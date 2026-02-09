@@ -94,5 +94,12 @@ export const migrations: Migration[] = [
       FOREIGN KEY(site_id) REFERENCES sites(id) ON DELETE CASCADE
     );
     `
+  },
+  {
+    id: "002_provider_sync",
+    sql: `
+    ALTER TABLE sites ADD COLUMN provider_status TEXT;
+    ALTER TABLE sites ADD COLUMN provider_https TEXT;
+    `
   }
 ];

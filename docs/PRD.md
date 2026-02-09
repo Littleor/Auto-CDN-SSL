@@ -30,6 +30,7 @@
 ### 网站管理
 - 创建/编辑/删除网站
 - 为网站绑定 CDN 平台凭据（腾讯云、七牛云）
+- 云平台同步：一键拉取在用域名与状态，自动生成站点
 
 ### 证书与续签
 - 证书来源：Let's Encrypt（ACME）/ 自签证书（开发环境）
@@ -83,6 +84,7 @@
 - PATCH /providers/:id
 - DELETE /providers/:id
 - GET /providers/catalog
+- POST /providers/:id/sync
 - GET /certificates
 - POST /certificates/issue
 - POST /deployments

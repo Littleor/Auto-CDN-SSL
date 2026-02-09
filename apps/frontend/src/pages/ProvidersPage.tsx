@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cloud, Plus, Trash2 } from "lucide-react";
+import { Cloud, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -23,6 +23,8 @@ export function ProvidersPage() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const fetchProviders = () => {
     if (!accessToken) return;
@@ -69,6 +71,24 @@ export function ProvidersPage() {
     if (!accessToken) return;
     await apiRequest(`/providers/${id}`, { method: "DELETE" }, accessToken);
     fetchProviders();
+  };
+
+  const handleSync = async (id: string) => {
+    if (!accessToken) return;
+    setSyncingId(id);
+    setSyncMessage(null);
+    try {
+      const result = await apiRequest<{ total: number; created: number; updated: number }>(
+        `/providers/${id}/sync`,
+        { method: "POST" },
+        accessToken
+      );
+      setSyncMessage(`同步完成：新增 ${result.created}，更新 ${result.updated}（共 ${result.total}）`);
+    } catch (err: any) {
+      setSyncMessage(err.message || "同步失败");
+    } finally {
+      setSyncingId(null);
+    }
   };
 
   return (
@@ -163,6 +183,12 @@ export function ProvidersPage() {
         </Dialog>
       </div>
 
+      {syncMessage && (
+        <Card>
+          <CardContent className="py-3 text-sm text-muted-foreground">{syncMessage}</CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         {providers.map((provider) => (
           <Card key={provider.id}>
@@ -177,9 +203,20 @@ export function ProvidersPage() {
               <div className="text-xs text-muted-foreground">
                 创建时间：{new Date(provider.createdAt).toLocaleDateString("zh-CN")}
               </div>
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSync(provider.id)}
+                  disabled={syncingId === provider.id}
+                >
+                  <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                  {syncingId === provider.id ? "同步中..." : "同步站点"}
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

@@ -185,6 +185,8 @@ export function SitesPage() {
                 <TableHead>站点</TableHead>
                 <TableHead>证书状态</TableHead>
                 <TableHead>到期时间</TableHead>
+                <TableHead>CDN 状态</TableHead>
+                <TableHead>HTTPS</TableHead>
                 <TableHead>平台</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
@@ -192,6 +194,8 @@ export function SitesPage() {
             <TableBody>
               {sites.map((site) => {
                 const days = daysUntil(site.latestCertificate?.expiresAt || null);
+                const providerStatus = site.providerStatus || site.provider_status;
+                const providerHttps = site.providerHttps || site.provider_https;
                 return (
                   <TableRow key={site.id}>
                     <TableCell>
@@ -211,6 +215,26 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell>
                       {site.latestCertificate ? formatDate(site.latestCertificate.expiresAt) : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {providerStatus ? (
+                        <Badge
+                          variant={
+                            ["online", "success", "normal"].includes(providerStatus)
+                              ? "success"
+                              : ["offline", "disabled", "frozen"].includes(providerStatus)
+                                ? "warning"
+                                : "muted"
+                          }
+                        >
+                          {providerStatus}
+                        </Badge>
+                      ) : (
+                        <Badge variant="muted">-</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {providerHttps || "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">

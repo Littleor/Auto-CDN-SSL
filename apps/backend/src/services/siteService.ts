@@ -11,6 +11,8 @@ export type Site = {
   auto_renew: number;
   renew_days_before: number;
   status: string;
+  provider_status?: string | null;
+  provider_https?: string | null;
   created_at: string;
   updated_at: string;
 };
