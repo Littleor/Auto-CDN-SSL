@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Plus, ShieldCheck, Server, Settings } from "lucide-react";
+import { Loader2, Plus, ShieldCheck, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,7 @@ const defaultForm = {
   name: "",
   domain: "",
   providerCredentialId: "",
-  dnsCredentialId: "",
   certificateSource: "self_signed",
-  acmeChallengeType: "http-01",
   autoRenew: true,
   renewDaysBefore: 30
 };
@@ -28,12 +26,8 @@ export function SitesPage() {
   const [providers, setProviders] = useState<any[]>([]);
   const [form, setForm] = useState(defaultForm);
   const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingSite, setEditingSite] = useState<any | null>(null);
-  const [editForm, setEditForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editError, setEditError] = useState<string | null>(null);
   const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [actionMessage, setActionMessage] = useState<Record<string, string>>({});
@@ -43,23 +37,11 @@ export function SitesPage() {
     () => providers.filter((provider) => ["tencent", "qiniu"].includes(provider.providerType)),
     [providers]
   );
-  const dnsOptions = useMemo(
-    () =>
-      providers.filter((provider) =>
-        ["tencent_dns", "tencent"].includes(provider.providerType)
-      ),
-    [providers]
-  );
-  const hasDnsOptions = dnsOptions.length > 0;
   const providerLabel = (providerType: string) => {
     if (providerType === "tencent") return "腾讯云 CDN";
     if (providerType === "qiniu") return "七牛云 CDN";
     if (providerType === "tencent_dns") return "腾讯云 DNS";
     return providerType;
-  };
-  const dnsLabel = (provider: any) => {
-    if (provider.providerType === "tencent") return `${provider.name}（复用 CDN 凭据）`;
-    return provider.name;
   };
 
   const fetchData = () => {
@@ -91,12 +73,7 @@ export function SitesPage() {
             name: form.name,
             domain: form.domain,
             providerCredentialId: form.providerCredentialId || null,
-            dnsCredentialId:
-              form.certificateSource === "letsencrypt" && form.acmeChallengeType === "dns-01"
-                ? form.dnsCredentialId || null
-                : null,
             certificateSource: form.certificateSource,
-            acmeChallengeType: form.acmeChallengeType,
             autoRenew: form.autoRenew,
             renewDaysBefore: Number(form.renewDaysBefore)
           })
@@ -113,63 +90,6 @@ export function SitesPage() {
     }
   };
 
-  const resolveChallengeType = (site: any) => {
-    const raw = site.acmeChallengeType ?? "http-01";
-    if (raw !== "dns-01") return "http-01";
-    return site.dnsCredentialId ? "dns-01" : "http-01";
-  };
-
-  const openEdit = (site: any) => {
-    setEditingSite(site);
-    setEditForm({
-      name: site.name ?? "",
-      domain: site.domain ?? "",
-      providerCredentialId: site.providerCredentialId ?? "",
-      dnsCredentialId: site.dnsCredentialId ?? "",
-      certificateSource: site.certificateSource ?? "self_signed",
-      acmeChallengeType: resolveChallengeType(site),
-      autoRenew: Boolean(site.autoRenew),
-      renewDaysBefore: Number(site.renewDaysBefore ?? 30)
-    });
-    setEditError(null);
-    setEditOpen(true);
-  };
-
-  const handleUpdate = async () => {
-    if (!accessToken || !editingSite) return;
-    setLoading(true);
-    setEditError(null);
-    try {
-      await apiRequest(
-        `/sites/${editingSite.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: editForm.name,
-            domain: editForm.domain,
-            providerCredentialId: editForm.providerCredentialId || null,
-            dnsCredentialId:
-              editForm.certificateSource === "letsencrypt" &&
-              editForm.acmeChallengeType === "dns-01"
-                ? editForm.dnsCredentialId || null
-                : null,
-            certificateSource: editForm.certificateSource,
-            acmeChallengeType: editForm.acmeChallengeType,
-            autoRenew: editForm.autoRenew,
-            renewDaysBefore: Number(editForm.renewDaysBefore)
-          })
-        },
-        accessToken
-      );
-      setEditOpen(false);
-      setEditingSite(null);
-      fetchData();
-    } catch (err: any) {
-      setEditError(err.message || "更新失败");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleIssue = async (siteId: string) => {
     if (!accessToken) return;
@@ -295,56 +215,12 @@ export function SitesPage() {
                     <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
                   </SelectContent>
                 </Select>
+                {form.certificateSource === "letsencrypt" && (
+                  <p className="text-xs text-muted-foreground">
+                    验证方式在「域名验证」里按顶级域名统一配置。
+                  </p>
+                )}
               </div>
-              {form.certificateSource === "letsencrypt" && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">验证方式</label>
-                  <Select
-                    value={form.acmeChallengeType}
-                    onValueChange={(value) => setForm({ ...form, acmeChallengeType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择验证方式" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="http-01">HTTP-01（需开放 80 端口）</SelectItem>
-                      <SelectItem value="dns-01" disabled={!hasDnsOptions}>
-                        DNS-01（腾讯云 DNS）
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {!hasDnsOptions && (
-                    <p className="text-xs text-muted-foreground">
-                      还没有 DNS 凭据，先到“云平台凭据”创建腾讯云 DNS。
-                    </p>
-                  )}
-                </div>
-              )}
-              {form.certificateSource === "letsencrypt" && form.acmeChallengeType === "dns-01" && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">DNS 凭据（腾讯云）</label>
-                  <Select
-                    value={form.dnsCredentialId}
-                    onValueChange={(value) => setForm({ ...form, dnsCredentialId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择 DNS 凭据" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dnsOptions.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {dnsLabel(provider)} ({providerLabel(provider.providerType)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {dnsOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      还没有腾讯云凭据，请先到“CDN 凭据”或“DNS 凭据”里创建腾讯云凭据。
-                    </p>
-                  )}
-                </div>
-              )}
               <div className="space-y-2">
                 <label className="text-sm font-medium">CDN 平台凭据</label>
                 <Select
@@ -371,135 +247,6 @@ export function SitesPage() {
               </Button>
               <Button onClick={handleSubmit} disabled={loading}>
                 {loading ? "创建中..." : "创建"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog
-          open={editOpen}
-          onOpenChange={(value) => {
-            setEditOpen(value);
-            if (!value) {
-              setEditingSite(null);
-              setEditForm(defaultForm);
-              setEditError(null);
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>编辑网站设置</DialogTitle>
-              <DialogDescription>调整续签验证方式或凭据。</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">站点名称</label>
-                <Input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">域名</label>
-                <Input
-                  value={editForm.domain}
-                  onChange={(e) => setEditForm({ ...editForm, domain: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">证书来源</label>
-                <Select
-                  value={editForm.certificateSource}
-                  onValueChange={(value) =>
-                    setEditForm({ ...editForm, certificateSource: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择证书来源" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="letsencrypt">Let's Encrypt</SelectItem>
-                    <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {editForm.certificateSource === "letsencrypt" && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">验证方式</label>
-                  <Select
-                    value={editForm.acmeChallengeType}
-                    onValueChange={(value) =>
-                      setEditForm({ ...editForm, acmeChallengeType: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择验证方式" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="http-01">HTTP-01（需开放 80 端口）</SelectItem>
-                      <SelectItem value="dns-01" disabled={!hasDnsOptions}>
-                        DNS-01（腾讯云 DNS）
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {!hasDnsOptions && (
-                    <p className="text-xs text-muted-foreground">
-                      还没有 DNS 凭据，先到“云平台凭据”创建腾讯云 DNS。
-                    </p>
-                  )}
-                </div>
-              )}
-              {editForm.certificateSource === "letsencrypt" &&
-                editForm.acmeChallengeType === "dns-01" && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">DNS 凭据（腾讯云）</label>
-                    <Select
-                      value={editForm.dnsCredentialId}
-                      onValueChange={(value) =>
-                        setEditForm({ ...editForm, dnsCredentialId: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择 DNS 凭据" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {dnsOptions.map((provider) => (
-                          <SelectItem key={provider.id} value={provider.id}>
-                            {dnsLabel(provider)} ({providerLabel(provider.providerType)})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">CDN 平台凭据</label>
-                <Select
-                  value={editForm.providerCredentialId}
-                  onValueChange={(value) =>
-                    setEditForm({ ...editForm, providerCredentialId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择凭据 (可选)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providerOptions.map((provider) => (
-                      <SelectItem key={provider.id} value={provider.id}>
-                        {provider.name} ({providerLabel(provider.providerType)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {editError && <p className="text-sm text-destructive">{editError}</p>}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditOpen(false)}>
-                取消
-              </Button>
-              <Button onClick={handleUpdate} disabled={loading}>
-                {loading ? "保存中..." : "保存"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -649,14 +396,6 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEdit(site)}
-                        >
-                          <Settings className="mr-1 h-3.5 w-3.5" />
-                          设置
-                        </Button>
                         <Button
                           variant="outline"
                           size="sm"

@@ -28,6 +28,7 @@
     "qiniu": "^7.12.0",
     "selfsigned": "^2.4.1",
     "tencentcloud-sdk-nodejs": "^4.0.534",
+    "tldts": "^6.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

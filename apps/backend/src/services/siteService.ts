@@ -27,9 +27,7 @@ export function createSite(params: {
   name: string;
   domain: string;
   providerCredentialId: string | null;
-  dnsCredentialId: string | null;
   certificateSource: "letsencrypt" | "self_signed";
-  acmeChallengeType: "http-01" | "dns-01";
   autoRenew: boolean;
   renewDaysBefore: number;
 }) {
@@ -38,19 +36,17 @@ export function createSite(params: {
   const now = new Date().toISOString();
   db.prepare(
     `INSERT INTO sites (
-      id, user_id, name, domain, provider_credential_id, dns_credential_id,
-      certificate_source, acme_challenge_type,
+      id, user_id, name, domain, provider_credential_id,
+      certificate_source,
       auto_renew, renew_days_before, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     params.userId,
     params.name,
     params.domain,
     params.providerCredentialId,
-    params.dnsCredentialId,
     params.certificateSource,
-    params.acmeChallengeType,
     params.autoRenew ? 1 : 0,
     params.renewDaysBefore,
     "active",
@@ -81,9 +77,7 @@ export function updateSite(params: {
   name: string;
   domain: string;
   providerCredentialId: string | null;
-  dnsCredentialId: string | null;
   certificateSource: "letsencrypt" | "self_signed";
-  acmeChallengeType: "http-01" | "dns-01";
   autoRenew: boolean;
   renewDaysBefore: number;
   status: string;
@@ -92,17 +86,15 @@ export function updateSite(params: {
   const now = new Date().toISOString();
   db.prepare(
     `UPDATE sites
-     SET name = ?, domain = ?, provider_credential_id = ?, dns_credential_id = ?,
-         certificate_source = ?, acme_challenge_type = ?,
+     SET name = ?, domain = ?, provider_credential_id = ?,
+         certificate_source = ?,
          auto_renew = ?, renew_days_before = ?, status = ?, updated_at = ?
      WHERE id = ? AND user_id = ?`
   ).run(
     params.name,
     params.domain,
     params.providerCredentialId,
-    params.dnsCredentialId,
     params.certificateSource,
-    params.acmeChallengeType,
     params.autoRenew ? 1 : 0,
     params.renewDaysBefore,
     params.status,

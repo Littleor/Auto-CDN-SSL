@@ -4,8 +4,10 @@ import { encrypt } from "../utils/crypto";
 import { issueSelfSigned } from "./issuers/selfSignedIssuer";
 import { issueAcme } from "./issuers/acmeIssuer";
 import { createJob, finishJob, startJob, updateJobMessage } from "./jobService";
-import { Site } from "./siteService";
+import { Site, listSites } from "./siteService";
 import { getProviderCredential, decryptProviderConfig } from "./providerService";
+import { getDomainSetting } from "./domainSettingsService";
+import { getApexDomain } from "../utils/domain";
 
 export type CertificateRecord = {
   id: string;
@@ -94,11 +96,32 @@ async function runIssueJob(site: Site, jobId: string) {
   if (site.certificate_source === "letsencrypt") {
     updateJobMessage(jobId, "进行 ACME 校验");
     let dnsConfig = undefined;
-    if (site.acme_challenge_type === "dns-01") {
-      if (!site.dns_credential_id) {
+    let challengeType: "http-01" | "dns-01" = "http-01";
+    let dnsCredentialId: string | null = null;
+    const apexDomain = getApexDomain(site.domain);
+    if (apexDomain) {
+      const setting = getDomainSetting(site.user_id, apexDomain);
+      if (setting) {
+        challengeType = setting.challenge_type;
+        dnsCredentialId = setting.dns_credential_id ?? null;
+      } else {
+        const inferred = listSites(site.user_id).find(
+          (item) =>
+            getApexDomain(item.domain) === apexDomain &&
+            item.acme_challenge_type === "dns-01" &&
+            item.dns_credential_id
+        );
+        if (inferred?.dns_credential_id) {
+          challengeType = "dns-01";
+          dnsCredentialId = inferred.dns_credential_id;
+        }
+      }
+    }
+    if (challengeType === "dns-01") {
+      if (!dnsCredentialId) {
         throw new Error("DNS 凭据未配置");
       }
-      const credential = getProviderCredential(site.user_id, site.dns_credential_id);
+      const credential = getProviderCredential(site.user_id, dnsCredentialId);
       if (!credential) {
         throw new Error("DNS 凭据不存在");
       }
@@ -108,7 +131,7 @@ async function runIssueJob(site: Site, jobId: string) {
       dnsConfig = decryptProviderConfig(credential) as any;
     }
     cert = await issueAcme(site.domain, sans, {
-      challengeType: site.acme_challenge_type ?? "http-01",
+      challengeType,
       dnsConfig,
       onMessage: (message) => updateJobMessage(jobId, message)
     });

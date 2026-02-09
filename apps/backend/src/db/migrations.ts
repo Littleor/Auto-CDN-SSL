@@ -121,5 +121,22 @@ export const migrations: Migration[] = [
     ALTER TABLE sites ADD COLUMN dns_credential_id TEXT;
     ALTER TABLE sites ADD COLUMN acme_challenge_type TEXT DEFAULT 'http-01';
     `
+  },
+  {
+    id: "006_domain_settings",
+    sql: `
+    CREATE TABLE IF NOT EXISTS domain_settings (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      apex_domain TEXT NOT NULL,
+      challenge_type TEXT NOT NULL DEFAULT 'http-01',
+      dns_credential_id TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(user_id, apex_domain),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(dns_credential_id) REFERENCES provider_credentials(id) ON DELETE SET NULL
+    );
+    `
   }
 ];

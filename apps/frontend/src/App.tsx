@@ -6,6 +6,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { SitesPage } from "@/pages/SitesPage";
 import { ProvidersPage } from "@/pages/ProvidersPage";
 import { DnsProvidersPage } from "@/pages/DnsProvidersPage";
+import { DomainSettingsPage } from "@/pages/DomainSettingsPage";
 import { DeploymentsPage } from "@/pages/DeploymentsPage";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,6 +42,7 @@ export default function App() {
       >
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="sites" element={<SitesPage />} />
+        <Route path="domain-settings" element={<DomainSettingsPage />} />
         <Route path="providers" element={<ProvidersPage />} />
         <Route path="dns-providers" element={<DnsProvidersPage />} />
         <Route path="deployments" element={<DeploymentsPage />} />
