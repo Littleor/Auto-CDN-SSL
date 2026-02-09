@@ -1,92 +1,114 @@
 # Auto CDN SSL
 
-An open-source platform dedicated to CDN SSL certificate automation (Tencent CDN / Qiniu CDN), providing visual management, automatic renewals, and one-click deployment to reduce the operational cost of HTTPS on CDN.
+A CDN-focused SSL certificate automation platform (Tencent CDN / Qiniu CDN).
 
-- 中文（默认）: `README.md`
+Auto CDN SSL is built to reduce the operational cost and risk of managing CDN HTTPS certificates at scale: renew before expiry, optionally auto-deploy the renewed certificate to your CDN, and keep everything observable with site status, jobs, and deployment history.
+
 - English
+- 中文（默认）: `README.md`
+
+## Use Cases
+- Your certificates are used on CDN (Tencent/Qiniu) and you want automated renewal + deployment
+- You manage many domains and manual renewal/deployment is error-prone
+- You want centralized visibility for credentials, certificate lifecycle, and deployments
 
 ## Key Features
-- Automatic CDN SSL renewal and expiry alerts
+- Scheduled renewals before expiry (threshold/time configurable)
+- One-click renewal from the console
 - Auto-deploy to CDN after renewal (global toggle)
-- HTTP-01 / DNS-01 validation (Tencent DNS)
-- Sync CDN sites and statuses from provider credentials
-- Visualized certificate, deployment, and job status
-- SMTP-based email verification during signup
+- Domain validation: HTTP-01 / DNS-01 (Tencent DNS; can reuse Tencent CDN credentials)
+- Site sync: import domains and statuses from CDN providers
+- Observability: sites, certificates, deployments, job status
+- SMTP-based email verification for signup
 
 ## Tech Stack
-- Frontend: React + Vite + TypeScript + Tailwind + shadcn-style UI
+- Frontend: React + Vite + TypeScript + Tailwind
 - Backend: Node.js + TypeScript + Fastify
 - Database: MySQL
 
-## Project Structure
+## Repository Layout
 - `apps/backend`: Backend service (Fastify + MySQL)
-- `apps/frontend`: Admin console (React + Vite)
+- `apps/frontend`: Web console (React + Vite)
 - `docs/PRD.md`: Product requirements (Chinese)
 
-## Quick Start
+## Quick Start (Local)
 
-### All-in-one (frontend + backend)
+### Prerequisites
+- Node.js 20+ (recommended)
+- Yarn 1 (this repo uses Yarn Workspaces)
+- MySQL 8+ (or a MySQL-compatible service)
+
+### Install
 ```bash
-cd /Users/littleor/Project/Interest/auto-ssl
+yarn
+```
+
+### Configure Environment Variables
+Backend:
+```bash
+cp apps/backend/.env.example apps/backend/.env
+```
+
+Frontend:
+```bash
+cp apps/frontend/.env.example apps/frontend/.env
+```
+
+`.env` files are gitignored by default. Never commit secrets.
+
+### Run (frontend + backend)
+```bash
 yarn dev
 ```
 
-### Backend
-```bash
-cd /Users/littleor/Project/Interest/auto-ssl/apps/backend
-cp .env.example .env
-# Fill JWT_SECRET, DATA_ENCRYPTION_KEY, and MySQL connection details
-
-cd /Users/littleor/Project/Interest/auto-ssl
-yarn workspace auto-ssl-backend dev
-```
-
-### Frontend
-```bash
-cd /Users/littleor/Project/Interest/auto-ssl/apps/frontend
-cp .env.example .env
-# Update VITE_API_URL if needed
-
-cd /Users/littleor/Project/Interest/auto-ssl
-yarn workspace frontend dev
-```
+- Backend default: `http://localhost:4000`
+- Frontend default: `http://localhost:5173`
+- API docs (dev): `http://localhost:4000/docs`
 
 ## Environment Variables
+Use the examples as the source of truth: `apps/backend/.env.example`, `apps/frontend/.env.example`.
 
-### Backend (`apps/backend/.env`)
-- `JWT_SECRET`: JWT secret (required)
-- `DATA_ENCRYPTION_KEY`: AES-256-GCM key for credential encryption (required)
-- `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`: MySQL connection (required)
-- `ACME_DIRECTORY_URL`: ACME directory URL (default: Let’s Encrypt)
-- `ACME_ACCOUNT_EMAIL`: ACME account email (optional; falls back to user signup email)
-- `ACME_HTTP_HOST` / `ACME_HTTP_PORT`: HTTP-01 challenge config (optional)
-- `ACME_SKIP_LOCAL_VERIFY`: Skip local verify (optional)
-- `ACME_DNS_WAIT_SECONDS` / `ACME_DNS_TTL`: DNS-01 timing settings (optional)
-- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `FROM_EMAIL`: SMTP config (required)
+### Backend (Required)
+- `JWT_SECRET`: JWT secret (min length 16)
+- `DATA_ENCRYPTION_KEY`: encryption key for stored credentials/private keys (rotating it will break decryption of existing data)
+- `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `FROM_EMAIL`
+- `WEB_BASE_URL`: used to generate the email verification link (e.g. `http://localhost:5173`)
 
-### Frontend (`apps/frontend/.env`)
-- `VITE_API_URL`: API base URL (default `http://localhost:4000`)
-- `VITE_ANALYTICS_SNIPPET`: Analytics snippet injection (optional)
+### Backend (Optional / Defaults)
+- `CRON_SCHEDULE`: renewal cron expression (default `0 3 * * *`)
+- `RENEWAL_THRESHOLD_DAYS`: default renewal threshold in days (used when user has no override)
+- `ACME_DIRECTORY_URL`: ACME directory URL (default Let’s Encrypt)
+- `ACME_HTTP_HOST` / `ACME_HTTP_PORT`: HTTP-01 challenge settings
+- `ACME_SKIP_LOCAL_VERIFY` / `ACME_DNS_WAIT_SECONDS` / `ACME_DNS_TTL`
 
-## ACME Notes
-- ACME account email defaults to the current user’s registered email
-- Other ACME parameters are read from backend environment variables
+### Frontend
+- `VITE_API_URL`: backend URL (default `http://localhost:4000`)
+- `VITE_ANALYTICS_SNIPPET`: optional analytics injection (`<script ...></script>`)
 
-## DNS-01 Validation (Tencent DNS)
-1. Create a `Tencent DNS` credential under "DNS Credentials"
-2. Or reuse your Tencent CDN credential
-3. Configure validation by apex domain in "Domain Verification"
-4. When renewal is triggered, the system writes `_acme-challenge` TXT records automatically
+## ACME and Domain Validation
+- ACME account email: defaults to the current user’s signup email (no console control needed)
+- HTTP-01: challenge path is `/.well-known/acme-challenge/:token` and must be reachable publicly (typically requires port 80)
+- DNS-01 (recommended): configure Tencent DNS credentials; the system writes `_acme-challenge` TXT records automatically
+
+## Renewal & Deployment Policy
+- Renewal time, threshold, and auto-deploy toggle are configured per user in the “Renewal Settings” page
+- When auto-deploy is enabled, renewed certificates will be deployed to the bound CDN provider credential
 
 ## Tests
 ```bash
-yarn workspace auto-ssl-backend test
-yarn workspace frontend build
+yarn test
+yarn build
 ```
 
-## Commit Convention
-- Use `feat: ...` / `fix: ...` / `chore: ...`
-- One commit per feature; do not auto-push
+## Security Notes
+- Provider credentials and private keys are stored encrypted using AES-256-GCM (`DATA_ENCRYPTION_KEY`)
+- Protect `JWT_SECRET`, `DATA_ENCRYPTION_KEY`, SMTP credentials, and CDN/DNS secrets
+
+## Contributing
+Issues and PRs are welcome:
+- For bugs, include reproduction steps and logs
+- For features, please align with PRD or discuss in an Issue first
 
 ## License
-- Not specified yet (add one if you plan to open-source)
+Not specified yet (add a license if you plan to publish as open source).

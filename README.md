@@ -1,20 +1,28 @@
 # Auto CDN SSL
 
-面向 CDN 场景的 SSL 证书自动续签与部署平台（腾讯云 / 七牛云），提供可视化管理、自动化续签与一键部署能力，专注解决 CDN HTTPS 证书运维的成本问题。
+面向 CDN 场景的 SSL 证书自动续签与部署平台（腾讯云 CDN / 七牛云 CDN）。
 
-- 中文（默认）
+Auto CDN SSL 专注解决「CDN 域名多、证书多、手工续签/上传成本高、到期风险不可控」的问题：到期前自动续签，续签后自动下发到对应 CDN，配合可视化状态与部署记录，让 CDN HTTPS 长期稳定可控。
+
+- 默认中文
 - English: `README.en.md`
 
-## 核心功能
-- CDN SSL 自动续签与到期提醒
-- 续签后自动部署到 CDN（全局开关）
-- 支持 HTTP-01 / DNS-01（腾讯云 DNS）验证
-- CDN 凭据同步站点与状态
-- 证书、部署、任务执行状态可视化
-- SMTP 邮箱验证注册
+## 适用场景
+- 你的证书只用于 CDN（腾讯云/七牛云），需要自动续签 + 自动部署
+- 域名数量多，人工续签容易漏
+- 需要把凭据、证书生命周期、部署状态集中管理并可追踪
+
+## 核心能力
+- 自动续签：定时任务到期前续签（阈值、执行时间可配置）
+- 一键续签：控制台手动触发续签任务
+- 自动部署：续签完成后自动部署到 CDN（全局开关）
+- 域名验证：HTTP-01 / DNS-01（支持腾讯云 DNS；可复用腾讯云 CDN 凭据）
+- 站点同步：从 CDN 平台同步域名与状态，自动生成站点
+- 可视化：站点、证书、部署记录、任务状态
+- 注册校验：SMTP 邮箱验证
 
 ## 技术栈
-- 前端：React + Vite + TypeScript + Tailwind + shadcn 风格组件
+- 前端：React + Vite + TypeScript + Tailwind
 - 后端：Node.js + TypeScript + Fastify
 - 数据库：MySQL
 
@@ -23,70 +31,84 @@
 - `apps/frontend`：前端控制台（React + Vite）
 - `docs/PRD.md`：产品需求文档
 
-## 本地启动
+## 快速开始（本地）
 
-### 一键启动（前后端）
+### 依赖
+- Node.js 20+（建议）
+- Yarn 1（本仓库使用 Yarn Workspaces）
+- MySQL 8+（或兼容 MySQL 的服务）
+
+### 安装
 ```bash
-cd /Users/littleor/Project/Interest/auto-ssl
+yarn
+```
+
+### 配置环境变量
+后端：
+```bash
+cp apps/backend/.env.example apps/backend/.env
+```
+
+前端：
+```bash
+cp apps/frontend/.env.example apps/frontend/.env
+```
+
+`.env` 文件默认已被 gitignore，请勿提交敏感信息。
+
+### 启动（前后端）
+```bash
 yarn dev
 ```
 
-### 后端
-```bash
-cd /Users/littleor/Project/Interest/auto-ssl/apps/backend
-cp .env.example .env
-# 填写 JWT_SECRET 与 DATA_ENCRYPTION_KEY，并配置 MySQL 连接信息
+- 后端默认：`http://localhost:4000`
+- 前端默认：`http://localhost:5173`
+- 开发环境 API 文档：`http://localhost:4000/docs`
 
-cd /Users/littleor/Project/Interest/auto-ssl
-yarn workspace auto-ssl-backend dev
-```
+## 环境变量说明
+以示例文件为准：`apps/backend/.env.example`、`apps/frontend/.env.example`。
+
+### 后端（必填）
+- `JWT_SECRET`：JWT 密钥（长度至少 16）
+- `DATA_ENCRYPTION_KEY`：加密密钥（用于凭据与私钥加密存储；更换会导致历史数据无法解密）
+- `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `FROM_EMAIL`
+- `WEB_BASE_URL`：用于生成注册邮箱验证链接（例如 `http://localhost:5173`）
+
+### 后端（可选/默认值）
+- `CRON_SCHEDULE`：自动续签定时表达式（默认 `0 3 * * *`）
+- `RENEWAL_THRESHOLD_DAYS`：默认提前续签天数（用户未配置时使用）
+- `ACME_DIRECTORY_URL`：ACME 目录地址（默认 Let’s Encrypt）
+- `ACME_HTTP_HOST` / `ACME_HTTP_PORT`：HTTP-01 校验服务参数
+- `ACME_SKIP_LOCAL_VERIFY` / `ACME_DNS_WAIT_SECONDS` / `ACME_DNS_TTL`
 
 ### 前端
-```bash
-cd /Users/littleor/Project/Interest/auto-ssl/apps/frontend
-cp .env.example .env
-# 如需修改 API 地址，编辑 VITE_API_URL
-
-cd /Users/littleor/Project/Interest/auto-ssl
-yarn workspace frontend dev
-```
-
-## 环境变量
-
-### 后端（`apps/backend/.env`）
-- `JWT_SECRET`：JWT 密钥（必填）
-- `DATA_ENCRYPTION_KEY`：AES-256-GCM 密钥，用于加密凭据（必填）
-- `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`：MySQL 连接信息（必填）
-- `ACME_DIRECTORY_URL`：ACME 目录地址（默认 Let’s Encrypt）
-- `ACME_ACCOUNT_EMAIL`：ACME 账户邮箱（可选；未设置时自动使用用户注册邮箱）
-- `ACME_HTTP_HOST` / `ACME_HTTP_PORT`：HTTP-01 校验服务配置（可选）
-- `ACME_SKIP_LOCAL_VERIFY`：是否跳过本地校验（可选）
-- `ACME_DNS_WAIT_SECONDS` / `ACME_DNS_TTL`：DNS-01 等待与 TTL（可选）
-- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `FROM_EMAIL`：邮件服务（必填，用于邮箱验证）
-
-### 前端（`apps/frontend/.env`）
 - `VITE_API_URL`：后端地址（默认 `http://localhost:4000`）
 - `VITE_ANALYTICS_SNIPPET`：统计脚本注入（可选，支持 `<script ...></script>`）
 
-## ACME 说明
-- ACME 账户邮箱默认使用当前登录用户的注册邮箱
-- 其他 ACME 参数使用后端环境变量的默认值
+## ACME 与域名验证
+- ACME 账户邮箱：默认使用当前用户注册邮箱（无需在控制台配置）
+- HTTP-01：后端提供挑战路径 `/.well-known/acme-challenge/:token`，需要外网能访问到该路径（通常要求 80 端口可达）
+- DNS-01（推荐）：在控制台配置腾讯云 DNS 凭据；系统会自动写入 `_acme-challenge` TXT 记录并等待生效
 
-## DNS-01 验证配置（腾讯云 DNS）
-1. 在「DNS 凭据」中新建 `腾讯云 DNS` 凭据（SecretId / SecretKey）
-2. 或者直接复用「CDN 凭据」里的腾讯云凭据（无需重复创建）
-3. 在「域名验证」中按顶级域名配置验证方式（HTTP-01 / DNS-01）
-4. 触发续签后系统会自动写入 `_acme-challenge` TXT 记录并等待生效
+## 续签与部署策略
+- 续签执行时间、提前续签阈值、是否自动部署：在控制台「续签设置」中按用户全局配置
+- 自动部署开启时：续签成功后会自动下发证书到站点绑定的 CDN 平台凭据
 
 ## 测试
 ```bash
-yarn workspace auto-ssl-backend test
-yarn workspace frontend build
+yarn test
+yarn build
 ```
 
-## 提交规范
-- `feat: ...` / `fix: ...` / `chore: ...` 等
-- 功能完成后单独 commit，不自动 push
+## 安全说明
+- 云厂商凭据与证书私钥会使用 AES-256-GCM 加密后存储（见 `DATA_ENCRYPTION_KEY`）
+- 请妥善保管 `JWT_SECRET`、`DATA_ENCRYPTION_KEY`、SMTP 与云厂商密钥
+
+## 贡献
+欢迎提交 Issue / PR：
+- Bug 修复请附复现步骤与日志
+- 新增功能请先对齐 PRD 或在 Issue 中讨论
 
 ## License
-- 暂未指定（如需开源协议请补充）
+暂未指定（如计划开源发布，请补充开源协议文件）。
