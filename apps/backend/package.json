@@ -5,8 +5,8 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "NODE_OPTIONS=--max-old-space-size=1024 node dist/index.js",
+    "build": "NODE_OPTIONS=--max-old-space-size=1024 tsc -p tsconfig.json",
+    "start": "node dist/index.js",
     "migrate": "tsx src/db/migrate.ts",
     "test": "vitest run"
   },
