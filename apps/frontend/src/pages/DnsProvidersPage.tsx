@@ -31,6 +31,21 @@ export function DnsProvidersPage() {
     [providers]
   );
 
+  const displayProviders = useMemo(
+    () =>
+      [
+        ...dnsProviders.map((provider) => ({
+          ...provider,
+          source: "dns" as const
+        })),
+        ...reusableCdnProviders.map((provider) => ({
+          ...provider,
+          source: "cdn" as const
+        }))
+      ],
+    [dnsProviders, reusableCdnProviders]
+  );
+
   const fetchProviders = () => {
     if (!accessToken) return;
     apiRequest<any[]>("/providers", {}, accessToken).then(setProviders);
@@ -131,33 +146,14 @@ export function DnsProvidersPage() {
 
       <Card>
         <CardContent className="py-4 text-sm text-muted-foreground">
-          你也可以直接复用「CDN 凭据」里的腾讯云凭据作为 DNS 凭据，无需重复创建。
+          「CDN 凭据」里的腾讯云凭据也会出现在这里，可直接用于 DNS-01 验证。
         </CardContent>
       </Card>
 
-      {reusableCdnProviders.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">可复用的腾讯云 CDN 凭据</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
-            {reusableCdnProviders.map((provider) => (
-              <div
-                key={provider.id}
-                className="flex items-center justify-between rounded-xl border border-white/60 bg-white/60 px-3 py-2"
-              >
-                <span>{provider.name}</span>
-                <span className="text-xs">可用于 DNS</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-        {dnsProviders.map((provider) => (
+        {displayProviders.map((provider) => (
           <div
-            key={provider.id}
+            key={`${provider.source}-${provider.id}`}
             className="flex items-center justify-between rounded-xl border border-white/60 bg-white/60 px-3 py-2 text-sm"
           >
             <div className="space-y-1">
@@ -166,18 +162,23 @@ export function DnsProvidersPage() {
                 <span className="font-medium">{provider.name}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                腾讯云 DNS · {new Date(provider.createdAt).toLocaleDateString("zh-CN")}
+                {provider.source === "dns" ? "腾讯云 DNS" : "腾讯云 CDN"} ·{" "}
+                {new Date(provider.createdAt).toLocaleDateString("zh-CN")}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {provider.source === "dns" ? (
+              <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">可复用</span>
+            )}
           </div>
         ))}
-        {dnsProviders.length === 0 && (
+        {displayProviders.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-muted-foreground/40 px-4 py-8 text-center text-sm text-muted-foreground">
             <Cloud className="h-6 w-6" />
-            暂无 DNS 凭据
+            暂无 DNS / CDN 凭据
           </div>
         )}
       </div>
