@@ -4,8 +4,7 @@
 
 Auto CDN SSL 专注解决「CDN 域名多、证书多、手工续签/上传成本高、到期风险不可控」的问题：到期前自动续签，续签后自动下发到对应 CDN，配合可视化状态与部署记录，让 CDN HTTPS 长期稳定可控。
 
-- 默认中文
-- English: `README.en.md`
+English: [README.en.md](README.en.md)
 
 ## 适用场景
 - 你的证书只用于 CDN（腾讯云/七牛云），需要自动续签 + 自动部署

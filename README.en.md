@@ -4,8 +4,7 @@ A CDN-focused SSL certificate automation platform (Tencent CDN / Qiniu CDN).
 
 Auto CDN SSL is built to reduce the operational cost and risk of managing CDN HTTPS certificates at scale: renew before expiry, optionally auto-deploy the renewed certificate to your CDN, and keep everything observable with site status, jobs, and deployment history.
 
-- English
-- 中文（默认）: `README.md`
+中文: [README.md](README.md)
 
 ## Use Cases
 - Your certificates are used on CDN (Tencent/Qiniu) and you want automated renewal + deployment
