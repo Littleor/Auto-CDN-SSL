@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
+import { LandingPage } from "@/pages/LandingPage";
 import { EmailVerifyPage } from "@/pages/EmailVerifyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { SitesPage } from "@/pages/SitesPage";
@@ -31,7 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactElement }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify" element={<EmailVerifyPage />} />
