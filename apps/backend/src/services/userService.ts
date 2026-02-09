@@ -6,6 +6,8 @@ export type User = {
   email: string;
   name: string;
   password_hash: string;
+  email_verified: number;
+  email_verified_at: string | null;
   created_at: string;
 };
 
@@ -18,11 +20,19 @@ export async function createUser(params: {
   const id = nanoid();
   const now = new Date().toISOString();
   const stmt = db.prepare(
-    `INSERT INTO users (id, email, name, password_hash, created_at)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO users (id, email, name, password_hash, email_verified, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
   );
-  await stmt.run(id, params.email, params.name, params.passwordHash, now);
-  return { id, email: params.email, name: params.name, password_hash: params.passwordHash, created_at: now };
+  await stmt.run(id, params.email, params.name, params.passwordHash, 0, now);
+  return {
+    id,
+    email: params.email,
+    name: params.name,
+    password_hash: params.passwordHash,
+    email_verified: 0,
+    email_verified_at: null,
+    created_at: now
+  };
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
@@ -40,4 +50,12 @@ export async function findUserById(id: string): Promise<User | null> {
 export async function listUsers(): Promise<User[]> {
   const db = getDb();
   return (await db.prepare("SELECT * FROM users ORDER BY created_at DESC").all()) as User[];
+}
+
+export async function markUserEmailVerified(userId: string) {
+  const db = getDb();
+  const now = new Date().toISOString();
+  await db
+    .prepare("UPDATE users SET email_verified = ?, email_verified_at = ? WHERE id = ?")
+    .run(1, now, userId);
 }

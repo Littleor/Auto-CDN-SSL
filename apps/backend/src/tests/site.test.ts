@@ -31,7 +31,25 @@ async function registerAndLogin() {
   });
   expect(register.statusCode).toBe(201);
   const body = register.json();
-  return { accessToken: body.accessToken };
+  expect(body.verificationToken).toBeTruthy();
+
+  const verify = await app.inject({
+    method: "GET",
+    url: `/auth/verify?token=${body.verificationToken}`
+  });
+  expect(verify.statusCode).toBe(200);
+
+  const login = await app.inject({
+    method: "POST",
+    url: "/auth/login",
+    payload: {
+      email: "dev@example.com",
+      password: "password123"
+    }
+  });
+  expect(login.statusCode).toBe(200);
+  const loginBody = login.json();
+  return { accessToken: loginBody.accessToken };
 }
 
 describe("site + cert + deploy", () => {

@@ -41,6 +41,11 @@ yarn workspace frontend dev
 - `MYSQL_USER`：MySQL 用户名
 - `MYSQL_PASSWORD`：MySQL 密码
 - `MYSQL_DATABASE`：MySQL 数据库
+- `SMTP_HOST`：SMTP 地址
+- `SMTP_PORT`：SMTP 端口
+- `SMTP_USER`：SMTP 用户名
+- `SMTP_PASSWORD`：SMTP 密码
+- `FROM_EMAIL`：发件人邮箱
 - `ACME_ACCOUNT_EMAIL`：Let's Encrypt 账户邮箱
 - `ACME_DIRECTORY_URL`：ACME 目录地址（默认 staging）
 

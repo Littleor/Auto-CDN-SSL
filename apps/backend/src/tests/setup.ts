@@ -8,6 +8,11 @@ process.env.MYSQL_PORT = process.env.MYSQL_PORT ?? "3306";
 process.env.MYSQL_USER = process.env.MYSQL_USER ?? "root";
 process.env.MYSQL_PASSWORD = process.env.MYSQL_PASSWORD ?? "";
 process.env.MYSQL_DATABASE = process.env.MYSQL_DATABASE ?? "auto_ssl_test";
+process.env.SMTP_HOST = process.env.SMTP_HOST ?? "smtp.test.local";
+process.env.SMTP_PORT = process.env.SMTP_PORT ?? "465";
+process.env.SMTP_USER = process.env.SMTP_USER ?? "no_reply@test.local";
+process.env.SMTP_PASSWORD = process.env.SMTP_PASSWORD ?? "test-password";
+process.env.FROM_EMAIL = process.env.FROM_EMAIL ?? "no_reply@test.local";
 process.env.ACME_ACCOUNT_EMAIL = "test@example.com";
 
 let getDb: typeof import("../db").getDb;
@@ -31,6 +36,7 @@ beforeEach(async () => {
     DELETE FROM sites;
     DELETE FROM domain_settings;
     DELETE FROM user_settings;
+    DELETE FROM email_verifications;
     DELETE FROM provider_credentials;
     DELETE FROM refresh_tokens;
     DELETE FROM users;

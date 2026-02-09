@@ -14,14 +14,16 @@ export function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
-      await register(name, email, password);
-      navigate("/app/dashboard");
+      const message = await register(name, email, password);
+      setSuccess(message || "验证邮件已发送，请前往邮箱完成验证。");
     } catch (err: any) {
       setError(err.message || "注册失败");
     } finally {
@@ -50,41 +52,55 @@ export function RegisterPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">昵称</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="如：小林"
-                  required
-                />
+            {success ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {success}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  邮箱验证完成后即可登录控制台。
+                </p>
+                <Button className="w-full" onClick={() => navigate("/login")}>
+                  去登录
+                </Button>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">邮箱</label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="dev@example.com"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">密码</label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="至少 8 位"
-                  required
-                />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "正在创建..." : "立即开始"}
-              </Button>
-            </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">昵称</label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="如：小林"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">邮箱</label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="dev@example.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">密码</label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="至少 8 位"
+                    required
+                  />
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "正在创建..." : "立即开始"}
+                </Button>
+              </form>
+            )}
             <p className="mt-4 text-center text-sm text-muted-foreground">
               已有账号？
               <Link to="/login" className="ml-1 text-primary hover:underline">

@@ -165,5 +165,24 @@ export const migrations: Migration[] = [
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `
+  },
+  {
+    id: "008_email_verification",
+    sql: `
+    ALTER TABLE users ADD COLUMN email_verified TINYINT NOT NULL DEFAULT 0;
+    ALTER TABLE users ADD COLUMN email_verified_at VARCHAR(32);
+
+    CREATE TABLE IF NOT EXISTS email_verifications (
+      id VARCHAR(32) PRIMARY KEY,
+      user_id VARCHAR(32) NOT NULL,
+      token_hash VARCHAR(64) NOT NULL,
+      expires_at VARCHAR(32) NOT NULL,
+      created_at VARCHAR(32) NOT NULL,
+      used_at VARCHAR(32),
+      UNIQUE KEY uniq_email_verifications_token (token_hash),
+      INDEX idx_email_verifications_user_id (user_id),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `
   }
 ];
