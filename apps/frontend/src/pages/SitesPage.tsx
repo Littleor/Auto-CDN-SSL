@@ -29,6 +29,7 @@ export function SitesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
+  const [issuingAll, setIssuingAll] = useState(false);
   const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [actionMessage, setActionMessage] = useState<Record<string, string>>({});
   const jobTimers = useRef<Record<string, number>>({});
@@ -137,6 +138,16 @@ export function SitesPage() {
     }
   };
 
+  const handleIssueAll = async () => {
+    if (!accessToken || sites.length === 0) return;
+    setIssuingAll(true);
+    try {
+      await Promise.all(sites.map((site) => handleIssue(site.id)));
+    } finally {
+      setIssuingAll(false);
+    }
+  };
+
   const handleDeploy = async (siteId: string) => {
     if (!accessToken) return;
     setDeploying((prev) => ({ ...prev, [siteId]: "loading" }));
@@ -163,94 +174,108 @@ export function SitesPage() {
           <h2 className="text-2xl font-semibold">网站管理</h2>
           <p className="text-sm text-muted-foreground">为每个站点配置证书来源与 CDN 平台。</p>
         </div>
-        <Dialog
-          open={open}
-          onOpenChange={(value) => {
-            setOpen(value);
-            if (value) {
-              setForm(defaultForm);
-              setError(null);
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              新建网站
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>新增网站</DialogTitle>
-              <DialogDescription>填写站点与证书信息。</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">站点名称</label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="如：主站"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">域名</label>
-                <Input
-                  value={form.domain}
-                  onChange={(e) => setForm({ ...form, domain: e.target.value })}
-                  placeholder="example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">证书来源</label>
-                <Select
-                  value={form.certificateSource}
-                  onValueChange={(value) => setForm({ ...form, certificateSource: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择证书来源" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="letsencrypt">Let's Encrypt</SelectItem>
-                    <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.certificateSource === "letsencrypt" && (
-                  <p className="text-xs text-muted-foreground">
-                    验证方式在「域名验证」里按顶级域名统一配置。
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">CDN 平台凭据</label>
-                <Select
-                  value={form.providerCredentialId}
-                  onValueChange={(value) => setForm({ ...form, providerCredentialId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择凭据 (可选)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providerOptions.map((provider) => (
-                      <SelectItem key={provider.id} value={provider.id}>
-                        {provider.name} ({providerLabel(provider.providerType)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                取消
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleIssueAll}
+            disabled={issuingAll || sites.length === 0}
+          >
+            {issuingAll ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="mr-2 h-4 w-4" />
+            )}
+            {issuingAll ? "续签中..." : "一键续签"}
+          </Button>
+          <Dialog
+            open={open}
+            onOpenChange={(value) => {
+              setOpen(value);
+              if (value) {
+                setForm(defaultForm);
+                setError(null);
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                新建网站
               </Button>
-              <Button onClick={handleSubmit} disabled={loading}>
-                {loading ? "创建中..." : "创建"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>新增网站</DialogTitle>
+                <DialogDescription>填写站点与证书信息。</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">站点名称</label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="如：主站"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">域名</label>
+                  <Input
+                    value={form.domain}
+                    onChange={(e) => setForm({ ...form, domain: e.target.value })}
+                    placeholder="example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">证书来源</label>
+                  <Select
+                    value={form.certificateSource}
+                    onValueChange={(value) => setForm({ ...form, certificateSource: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择证书来源" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="letsencrypt">Let's Encrypt</SelectItem>
+                      <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.certificateSource === "letsencrypt" && (
+                    <p className="text-xs text-muted-foreground">
+                      验证方式在「域名验证」里按顶级域名统一配置。
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">CDN 平台凭据</label>
+                  <Select
+                    value={form.providerCredentialId}
+                    onValueChange={(value) => setForm({ ...form, providerCredentialId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择凭据 (可选)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {providerOptions.map((provider) => (
+                        <SelectItem key={provider.id} value={provider.id}>
+                          {provider.name} ({providerLabel(provider.providerType)})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  取消
+                </Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {loading ? "创建中..." : "创建"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>
