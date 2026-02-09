@@ -107,6 +107,3 @@ yarn build
 Issues and PRs are welcome:
 - For bugs, include reproduction steps and logs
 - For features, please align with PRD or discuss in an Issue first
-
-## License
-Not specified yet (add a license if you plan to publish as open source).

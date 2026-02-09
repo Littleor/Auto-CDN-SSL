@@ -1,10 +1,9 @@
 # Auto CDN SSL
+[English Version](README.en.md)
 
 面向 CDN 场景的 SSL 证书自动续签与部署平台（腾讯云 CDN / 七牛云 CDN）。
 
 Auto CDN SSL 专注解决「CDN 域名多、证书多、手工续签/上传成本高、到期风险不可控」的问题：到期前自动续签，续签后自动下发到对应 CDN，配合可视化状态与部署记录，让 CDN HTTPS 长期稳定可控。
-
-English: [README.en.md](README.en.md)
 
 ## 适用场景
 - 你的证书只用于 CDN（腾讯云/七牛云），需要自动续签 + 自动部署
@@ -107,6 +106,3 @@ yarn build
 欢迎提交 Issue / PR：
 - Bug 修复请附复现步骤与日志
 - 新增功能请先对齐 PRD 或在 Issue 中讨论
-
-## License
-暂未指定（如计划开源发布，请补充开源协议文件）。
