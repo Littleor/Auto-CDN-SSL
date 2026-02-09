@@ -36,7 +36,7 @@ export async function sendVerificationEmail(params: {
   `;
 
   await transport.sendMail({
-    from: env.FROM_EMAIL,
+    from: `Auto CDN SSL <${env.FROM_EMAIL}>`,
     to: params.to,
     subject,
     text,
