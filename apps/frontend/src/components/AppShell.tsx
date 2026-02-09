@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/app/dashboard", label: "概览", icon: LayoutDashboard },
-  { to: "/app/sites", label: "网站", icon: Globe },
+  { to: "/app/sites", label: "CDN 站点", icon: Globe },
   { to: "/app/domain-settings", label: "域名验证", icon: ShieldCheck },
   { to: "/app/providers", label: "CDN 凭据", icon: Cloud },
   { to: "/app/dns-providers", label: "DNS 凭据", icon: Server },

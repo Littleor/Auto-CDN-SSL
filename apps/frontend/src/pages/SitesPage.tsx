@@ -229,8 +229,10 @@ export function SitesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold">网站管理</h2>
-          <p className="text-sm text-muted-foreground">为每个站点配置证书来源与 CDN 平台。</p>
+          <h2 className="text-2xl font-semibold">CDN SSL 证书管理</h2>
+          <p className="text-sm text-muted-foreground">
+            专用于 CDN 服务的 SSL 证书续签与部署管理。
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -243,7 +245,7 @@ export function SitesPage() {
             ) : (
               <ShieldCheck className="mr-2 h-4 w-4" />
             )}
-            {issuingAll ? "续签中..." : "一键续签"}
+            {issuingAll ? "续签中..." : "一键续签 CDN 证书"}
           </Button>
           <Dialog
             open={open}
@@ -258,13 +260,13 @@ export function SitesPage() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                新建网站
+                新建 CDN 站点
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>新增网站</DialogTitle>
-                <DialogDescription>填写站点与证书信息。</DialogDescription>
+                <DialogTitle>新增 CDN 站点</DialogTitle>
+                <DialogDescription>填写 CDN 站点与证书信息。</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -338,7 +340,7 @@ export function SitesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>续签与 ACME 设置</CardTitle>
+          <CardTitle>CDN 续签与 ACME 设置</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {!settings ? (
@@ -460,7 +462,7 @@ export function SitesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>站点列表</CardTitle>
+          <CardTitle>CDN 站点列表</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
