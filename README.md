@@ -8,6 +8,8 @@
 - 验证方式：HTTP-01 / DNS-01（DNS-01 目前支持腾讯云 DNS）
 - 部署目标：腾讯云 CDN、七牛云 CDN
 
+线上站点: [https://auto-cdn-ssl.littleor.cn](https://auto-cdn-ssl.littleor.cn)
+
 ![Home](assets/Screenshot-homepage.png)
 ![Site](assets/Screenshot-site-list.png)
 
