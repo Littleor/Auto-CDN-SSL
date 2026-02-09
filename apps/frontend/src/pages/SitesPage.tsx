@@ -44,7 +44,10 @@ export function SitesPage() {
     [providers]
   );
   const dnsOptions = useMemo(
-    () => providers.filter((provider) => provider.providerType === "tencent_dns"),
+    () =>
+      providers.filter((provider) =>
+        ["tencent_dns", "tencent"].includes(provider.providerType)
+      ),
     [providers]
   );
   const hasDnsOptions = dnsOptions.length > 0;
@@ -53,6 +56,10 @@ export function SitesPage() {
     if (providerType === "qiniu") return "七牛云 CDN";
     if (providerType === "tencent_dns") return "腾讯云 DNS";
     return providerType;
+  };
+  const dnsLabel = (provider: any) => {
+    if (provider.providerType === "tencent") return `${provider.name}（复用 CDN 凭据）`;
+    return provider.name;
   };
 
   const fetchData = () => {
@@ -311,14 +318,14 @@ export function SitesPage() {
                     <SelectContent>
                       {dnsOptions.map((provider) => (
                         <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name} ({providerLabel(provider.providerType)})
+                          {dnsLabel(provider)} ({providerLabel(provider.providerType)})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {dnsOptions.length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      还没有 DNS 凭据，请先到“云平台凭据”里创建腾讯云 DNS 凭据。
+                      还没有腾讯云凭据，请先到“CDN 凭据”或“DNS 凭据”里创建腾讯云凭据。
                     </p>
                   )}
                 </div>
@@ -441,7 +448,7 @@ export function SitesPage() {
                       <SelectContent>
                         {dnsOptions.map((provider) => (
                           <SelectItem key={provider.id} value={provider.id}>
-                            {provider.name} ({providerLabel(provider.providerType)})
+                            {dnsLabel(provider)} ({providerLabel(provider.providerType)})
                           </SelectItem>
                         ))}
                       </SelectContent>

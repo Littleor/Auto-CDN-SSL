@@ -39,7 +39,8 @@ yarn workspace frontend dev
 - 产品需求文档：`/Users/littleor/Project/Interest/auto-ssl/docs/PRD.md`
 
 ## DNS-01 验证配置（腾讯云 DNS）
-1. 在「云平台凭据」中新建 `腾讯云 DNS` 凭据（SecretId / SecretKey）
-2. 在「网站管理」中新建站点，证书来源选择 `Let's Encrypt`
-3. 验证方式选择 `DNS-01`，并选择刚创建的 DNS 凭据
-4. 触发续签后系统会自动写入 `_acme-challenge` TXT 记录并等待生效
+1. 在「DNS 凭据」中新建 `腾讯云 DNS` 凭据（SecretId / SecretKey）
+2. 或者直接复用「CDN 凭据」里的腾讯云凭据（无需重复创建）
+3. 在「网站管理」中新建/编辑站点，证书来源选择 `Let's Encrypt`
+4. 验证方式选择 `DNS-01`，并选择 DNS 凭据
+5. 触发续签后系统会自动写入 `_acme-challenge` TXT 记录并等待生效

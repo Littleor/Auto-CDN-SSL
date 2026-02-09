@@ -18,8 +18,7 @@ const initialForm = {
 
 const providerLabels: Record<string, string> = {
   tencent: "腾讯云 CDN",
-  qiniu: "七牛云 CDN",
-  tencent_dns: "腾讯云 DNS"
+  qiniu: "七牛云 CDN"
 };
 
 export function ProvidersPage() {
@@ -47,7 +46,7 @@ export function ProvidersPage() {
     setError(null);
     try {
       const config =
-        form.providerType === "tencent" || form.providerType === "tencent_dns"
+        form.providerType === "tencent"
           ? { secretId: form.secretId, secretKey: form.secretKey }
           : { accessKey: form.accessKey, secretKey: form.secretKey };
 
@@ -101,8 +100,8 @@ export function ProvidersPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold">云平台凭据</h2>
-          <p className="text-sm text-muted-foreground">安全保存并用于自动部署 CDN 证书。</p>
+          <h2 className="text-2xl font-semibold">CDN 凭据</h2>
+          <p className="text-sm text-muted-foreground">用于同步站点并自动部署 CDN 证书。</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -113,7 +112,7 @@ export function ProvidersPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>新增云平台凭据</DialogTitle>
+              <DialogTitle>新增 CDN 凭据</DialogTitle>
               <DialogDescription>填写腾讯云或七牛云的 API Key。</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -129,7 +128,6 @@ export function ProvidersPage() {
                   <SelectContent>
                     <SelectItem value="tencent">腾讯云 CDN</SelectItem>
                     <SelectItem value="qiniu">七牛云 CDN</SelectItem>
-                    <SelectItem value="tencent_dns">腾讯云 DNS</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -141,7 +139,7 @@ export function ProvidersPage() {
                   placeholder="如：生产环境"
                 />
               </div>
-              {form.providerType === "tencent" || form.providerType === "tencent_dns" ? (
+              {form.providerType === "tencent" ? (
                 <>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">SecretId</label>
@@ -213,19 +211,15 @@ export function ProvidersPage() {
                 创建时间：{new Date(provider.createdAt).toLocaleDateString("zh-CN")}
               </div>
               <div className="flex items-center gap-2">
-                {provider.providerType !== "tencent_dns" ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSync(provider.id)}
-                    disabled={syncingId === provider.id}
-                  >
-                    <RefreshCw className="mr-1 h-3.5 w-3.5" />
-                    {syncingId === provider.id ? "同步中..." : "同步站点"}
-                  </Button>
-                ) : (
-                  <span className="text-xs text-muted-foreground">DNS 凭据无需同步</span>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSync(provider.id)}
+                  disabled={syncingId === provider.id}
+                >
+                  <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                  {syncingId === provider.id ? "同步中..." : "同步站点"}
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
