@@ -11,6 +11,7 @@ type UserSettingsForm = {
   renewalHour: number;
   renewalMinute: number;
   renewalThresholdDays: number;
+  autoDeploy: boolean;
   acmeAccountEmail: string | null;
   acmeDirectoryUrl: string;
   acmeSkipLocalVerify: boolean;
@@ -53,6 +54,7 @@ export function RenewalSettingsPage() {
             renewalHour: settings.renewalHour,
             renewalMinute: settings.renewalMinute,
             renewalThresholdDays: settings.renewalThresholdDays,
+            autoDeploy: settings.autoDeploy,
             acmeAccountEmail: settings.acmeAccountEmail || null,
             acmeDirectoryUrl: settings.acmeDirectoryUrl || null,
             acmeSkipLocalVerify: settings.acmeSkipLocalVerify,
@@ -121,6 +123,22 @@ export function RenewalSettingsPage() {
                   }}
                 />
                 <p className="text-xs text-muted-foreground">证书到期前多少天开始续签。</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">续签后自动部署</label>
+                <Select
+                  value={settings.autoDeploy ? "true" : "false"}
+                  onValueChange={(value) => updateSettings({ autoDeploy: value === "true" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">自动部署到 CDN</SelectItem>
+                    <SelectItem value="false">仅续签，不自动部署</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">默认续签后自动下发到 CDN 平台。</p>
               </div>
             </div>
           )}

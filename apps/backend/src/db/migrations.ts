@@ -190,5 +190,17 @@ export const migrations: Migration[] = [
     sql: `
     ALTER TABLE sites ADD COLUMN auto_deploy TINYINT NOT NULL DEFAULT 1;
     `
+  },
+  {
+    id: "010_user_settings_auto_deploy",
+    sql: `
+    ALTER TABLE user_settings ADD COLUMN auto_deploy TINYINT NOT NULL DEFAULT 1;
+    `
+  },
+  {
+    id: "011_drop_site_auto_deploy",
+    sql: `
+    ALTER TABLE sites DROP COLUMN auto_deploy;
+    `
   }
 ];

@@ -17,14 +17,14 @@ const defaultForm = {
   providerCredentialId: "",
   certificateSource: "self_signed",
   autoRenew: true,
-  renewDaysBefore: 30,
-  autoDeploy: true
+  renewDaysBefore: 30
 };
 
 type UserSettingsForm = {
   renewalHour: number;
   renewalMinute: number;
   renewalThresholdDays: number;
+  autoDeploy: boolean;
   acmeAccountEmail: string | null;
   acmeDirectoryUrl: string;
   acmeSkipLocalVerify: boolean;
@@ -49,7 +49,6 @@ export function SitesPage() {
   const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
   const [issuingAll, setIssuingAll] = useState(false);
   const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
-  const [autoDeploySaving, setAutoDeploySaving] = useState<Record<string, boolean>>({});
   const [actionMessage, setActionMessage] = useState<Record<string, string>>({});
   const jobTimers = useRef<Record<string, number>>({});
 
@@ -101,8 +100,7 @@ export function SitesPage() {
             providerCredentialId: form.providerCredentialId || null,
             certificateSource: form.certificateSource,
             autoRenew: form.autoRenew,
-            renewDaysBefore: Number(form.renewDaysBefore),
-            autoDeploy: form.autoDeploy
+            renewDaysBefore: Number(form.renewDaysBefore)
           })
         },
         accessToken
@@ -228,38 +226,6 @@ export function SitesPage() {
     }
   };
 
-  const handleAutoDeployChange = async (site: any, value: string) => {
-    if (!accessToken) return;
-    const autoDeploy = value === "on";
-    setAutoDeploySaving((prev) => ({ ...prev, [site.id]: true }));
-    setActionMessage((prev) => ({ ...prev, [site.id]: "正在保存自动部署设置..." }));
-    try {
-      await apiRequest(
-        `/sites/${site.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: site.name,
-            domain: site.domain,
-            providerCredentialId: site.providerCredentialId ?? null,
-            certificateSource: site.certificateSource,
-            autoRenew: Boolean(site.autoRenew),
-            renewDaysBefore: Number(site.renewDaysBefore ?? 30),
-            autoDeploy,
-            status: site.status
-          })
-        },
-        accessToken
-      );
-      setActionMessage((prev) => ({ ...prev, [site.id]: "自动部署设置已保存" }));
-      fetchData();
-    } catch (err: any) {
-      setActionMessage((prev) => ({ ...prev, [site.id]: err.message || "保存失败" }));
-    } finally {
-      setAutoDeploySaving((prev) => ({ ...prev, [site.id]: false }));
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -358,22 +324,6 @@ export function SitesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">续签后自动部署</label>
-                  <Select
-                    value={form.autoDeploy ? "on" : "off"}
-                    onValueChange={(value) => setForm({ ...form, autoDeploy: value === "on" })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择续签后的部署方式" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="on">自动部署到 CDN</SelectItem>
-                      <SelectItem value="off">仅续签，不自动部署</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">默认续签后自动下发到 CDN 平台。</p>
-                </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
               </div>
               <DialogFooter>
@@ -403,7 +353,6 @@ export function SitesPage() {
                 <TableHead>有效期进度</TableHead>
                 <TableHead>CDN 状态</TableHead>
                 <TableHead>HTTPS</TableHead>
-                <TableHead>续签后部署</TableHead>
                 <TableHead>平台</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
@@ -472,7 +421,6 @@ export function SitesPage() {
                 const issueState = issuing[site.id] ?? "idle";
                 const deployState = deploying[site.id] ?? "idle";
                 const actionState = issueState !== "idle" ? issueState : deployState;
-                const autoDeployValue = site.autoDeploy === false ? "off" : "on";
                 const messageClass =
                   actionState === "error"
                     ? "text-destructive"
@@ -539,21 +487,6 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {providerHttps || "-"}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <Select
-                        value={autoDeployValue}
-                        onValueChange={(value) => handleAutoDeployChange(site, value)}
-                        disabled={autoDeploySaving[site.id]}
-                      >
-                        <SelectTrigger className="h-8 w-[132px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="on">自动部署</SelectItem>
-                          <SelectItem value="off">仅续签</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">

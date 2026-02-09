@@ -38,9 +38,9 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
   const upsertStmt = db.prepare(
     `INSERT INTO sites (
       id, user_id, name, domain, provider_credential_id, certificate_source,
-      auto_renew, renew_days_before, auto_deploy, status, provider_status, provider_https,
+      auto_renew, renew_days_before, status, provider_status, provider_https,
       provider_cert_expires_at, provider_cert_name, provider_cert_deploy_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       provider_credential_id = VALUES(provider_credential_id),
       provider_status = VALUES(provider_status),
@@ -70,7 +70,6 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
       "letsencrypt",
       0,
       30,
-      1,
       "active",
       item.status,
       item.https,

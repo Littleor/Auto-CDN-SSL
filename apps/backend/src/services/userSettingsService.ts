@@ -8,6 +8,7 @@ export type UserSettings = {
   renewal_hour: number;
   renewal_minute: number;
   renewal_threshold_days: number;
+  auto_deploy: number;
   acme_account_email: string | null;
   acme_directory_url: string | null;
   acme_skip_local_verify: number;
@@ -22,6 +23,7 @@ export type ResolvedUserSettings = {
   renewalHour: number;
   renewalMinute: number;
   renewalThresholdDays: number;
+  autoDeploy: boolean;
   acme: {
     accountEmail: string | null;
     directoryUrl: string;
@@ -60,6 +62,7 @@ function getDefaults(userId: string): Defaults {
     renewalHour: cronDefaults.hour,
     renewalMinute: cronDefaults.minute,
     renewalThresholdDays: env.RENEWAL_THRESHOLD_DAYS,
+    autoDeploy: true,
     acme: {
       accountEmail: env.ACME_ACCOUNT_EMAIL ?? null,
       directoryUrl: env.ACME_DIRECTORY_URL,
@@ -89,6 +92,8 @@ export async function getResolvedUserSettings(userId: string): Promise<ResolvedU
     renewalHour: row.renewal_hour ?? defaults.renewalHour,
     renewalMinute: row.renewal_minute ?? defaults.renewalMinute,
     renewalThresholdDays: row.renewal_threshold_days ?? defaults.renewalThresholdDays,
+    autoDeploy:
+      typeof row.auto_deploy === "number" ? row.auto_deploy === 1 : defaults.autoDeploy,
     acme: {
       accountEmail: row.acme_account_email ?? defaults.acme.accountEmail,
       directoryUrl: row.acme_directory_url ?? defaults.acme.directoryUrl,
@@ -107,6 +112,7 @@ export async function upsertUserSettings(params: {
   renewalHour: number;
   renewalMinute: number;
   renewalThresholdDays: number;
+  autoDeploy: boolean;
   acmeAccountEmail: string | null;
   acmeDirectoryUrl: string | null;
   acmeSkipLocalVerify: boolean;
@@ -119,14 +125,15 @@ export async function upsertUserSettings(params: {
   await db
     .prepare(
       `INSERT INTO user_settings (
-        id, user_id, renewal_hour, renewal_minute, renewal_threshold_days,
+        id, user_id, renewal_hour, renewal_minute, renewal_threshold_days, auto_deploy,
         acme_account_email, acme_directory_url, acme_skip_local_verify,
         acme_dns_wait_seconds, acme_dns_ttl, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         renewal_hour = VALUES(renewal_hour),
         renewal_minute = VALUES(renewal_minute),
         renewal_threshold_days = VALUES(renewal_threshold_days),
+        auto_deploy = VALUES(auto_deploy),
         acme_account_email = VALUES(acme_account_email),
         acme_directory_url = VALUES(acme_directory_url),
         acme_skip_local_verify = VALUES(acme_skip_local_verify),
@@ -140,6 +147,7 @@ export async function upsertUserSettings(params: {
       params.renewalHour,
       params.renewalMinute,
       params.renewalThresholdDays,
+      params.autoDeploy ? 1 : 0,
       params.acmeAccountEmail,
       params.acmeDirectoryUrl,
       params.acmeSkipLocalVerify ? 1 : 0,
