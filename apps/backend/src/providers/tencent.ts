@@ -68,8 +68,7 @@ export async function deployToTencentCdn(params: {
       Http2: "on",
       OcspStapling: "on",
       CertInfo: {
-        CertId: certId,
-        CertType: "SVR"
+        CertId: certId
       }
     }
   });
