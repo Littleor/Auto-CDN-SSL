@@ -3,7 +3,7 @@ import { getDb } from "../db/index.js";
 import { encrypt } from "../utils/crypto.js";
 import { issueSelfSigned } from "./issuers/selfSignedIssuer.js";
 import { issueAcme } from "./issuers/acmeIssuer.js";
-import { createJob, finishJob, startJob, updateJobMessage } from "./jobService.js";
+import { createJob, finishJob, startJob, updateJobContext, updateJobMessage } from "./jobService.js";
 import { Site } from "./siteService.js";
 import { decryptProviderConfig } from "./providerService.js";
 import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService.js";
@@ -168,6 +168,22 @@ function getIssueProviderSnapshot(site: Site, context: IssueExecutionContext) {
   };
 }
 
+function getInitialIssueProviderSnapshot(site: Site) {
+  if (site.certificate_source === "self_signed") {
+    return {
+      providerCredentialId: null,
+      providerType: "self_signed",
+      providerName: "自签证书"
+    };
+  }
+
+  return {
+    providerCredentialId: null,
+    providerType: "letsencrypt",
+    providerName: "Let's Encrypt"
+  };
+}
+
 async function runIssueJob(site: Site, jobId: string, context: IssueExecutionContext) {
   const resolvedSettings = context.resolvedSettings;
   await updateJobMessage(jobId, "准备证书申请");
@@ -216,19 +232,26 @@ export async function issueCertificateForSite(
   settings?: ResolvedUserSettings,
   options: IssueRequestOptions = { triggerSource: "manual_renew" }
 ) {
-  const context = await prepareIssueExecutionContext(site, settings);
-  const providerSnapshot = getIssueProviderSnapshot(site, context);
+  const initialSnapshot = getInitialIssueProviderSnapshot(site);
   const job = await createJob({
     siteId: site.id,
     type: "renew",
     domain: site.domain,
     triggerSource: options.triggerSource,
-    providerCredentialId: providerSnapshot.providerCredentialId,
-    providerType: providerSnapshot.providerType,
-    providerName: providerSnapshot.providerName
+    providerCredentialId: initialSnapshot.providerCredentialId,
+    providerType: initialSnapshot.providerType,
+    providerName: initialSnapshot.providerName
   });
   await startJob(job.id);
   try {
+    const context = await prepareIssueExecutionContext(site, settings);
+    const providerSnapshot = getIssueProviderSnapshot(site, context);
+    await updateJobContext({
+      jobId: job.id,
+      providerCredentialId: providerSnapshot.providerCredentialId,
+      providerType: providerSnapshot.providerType,
+      providerName: providerSnapshot.providerName
+    });
     const record = await runIssueJob(site, job.id, context);
     await finishJob(job.id, "success");
     return record;
@@ -243,21 +266,28 @@ export async function enqueueCertificateIssue(
   settings?: ResolvedUserSettings,
   options: IssueRequestOptions = { triggerSource: "manual_renew" }
 ) {
-  const context = await prepareIssueExecutionContext(site, settings);
-  const providerSnapshot = getIssueProviderSnapshot(site, context);
+  const initialSnapshot = getInitialIssueProviderSnapshot(site);
   const job = await createJob({
     siteId: site.id,
     type: "renew",
     domain: site.domain,
     triggerSource: options.triggerSource,
-    providerCredentialId: providerSnapshot.providerCredentialId,
-    providerType: providerSnapshot.providerType,
-    providerName: providerSnapshot.providerName
+    providerCredentialId: initialSnapshot.providerCredentialId,
+    providerType: initialSnapshot.providerType,
+    providerName: initialSnapshot.providerName
   });
   await startJob(job.id);
   setTimeout(() => {
     void (async () => {
       try {
+        const context = await prepareIssueExecutionContext(site, settings);
+        const providerSnapshot = getIssueProviderSnapshot(site, context);
+        await updateJobContext({
+          jobId: job.id,
+          providerCredentialId: providerSnapshot.providerCredentialId,
+          providerType: providerSnapshot.providerType,
+          providerName: providerSnapshot.providerName
+        });
         await runIssueJob(site, job.id, context);
         await finishJob(job.id, "success");
       } catch (error: unknown) {

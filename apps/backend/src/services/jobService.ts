@@ -89,6 +89,27 @@ export async function updateJobMessage(jobId: string, message: string) {
   await db.prepare("UPDATE jobs SET message = ? WHERE id = ?").run(message, jobId);
 }
 
+export async function updateJobContext(params: {
+  jobId: string;
+  providerCredentialId?: string | null;
+  providerType?: string | null;
+  providerName?: string | null;
+}) {
+  const db = getDb();
+  await db
+    .prepare(
+      `UPDATE jobs
+       SET provider_credential_id = ?, provider_type = ?, provider_name = ?
+       WHERE id = ?`
+    )
+    .run(
+      params.providerCredentialId ?? null,
+      params.providerType ?? null,
+      params.providerName ?? null,
+      params.jobId
+    );
+}
+
 export async function getJobForUser(userId: string, jobId: string): Promise<Job | null> {
   const db = getDb();
   const row = (await db

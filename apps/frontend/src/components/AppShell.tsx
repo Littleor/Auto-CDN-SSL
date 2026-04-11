@@ -25,17 +25,17 @@ export function AppShell() {
       </div>
       <div className="mx-auto flex min-h-screen max-w-[1440px] gap-6 px-6 py-8">
         <div className="w-full lg:hidden">
-          <div className="surface flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
+          <div className="surface flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
                 <ShieldCheck className="h-5 w-5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="font-display text-sm font-semibold tracking-tight">Auto CDN SSL</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => logout()}>
+            <Button variant="outline" size="sm" className="self-start sm:self-auto" onClick={() => logout()}>
               退出
             </Button>
           </div>
@@ -63,12 +63,12 @@ export function AppShell() {
             })}
           </div>
         </div>
-        <aside className="hidden w-72 flex-col gap-6 lg:flex">
-          <div className="surface flex items-center gap-3 px-4 py-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
+        <aside className="hidden w-72 shrink-0 flex-col gap-6 lg:flex">
+          <div className="surface flex flex-col items-start gap-3 px-4 py-4 xl:flex-row xl:items-center">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="font-display text-sm font-semibold tracking-tight">Auto CDN SSL</p>
               <p className="text-xs text-muted-foreground">CDN SSL 证书续签</p>
             </div>
@@ -109,7 +109,7 @@ export function AppShell() {
           </div>
         </aside>
 
-        <main className="flex-1">
+        <main className="min-w-0 flex-1">
           <div className="surface rounded-3xl p-6">
             <Outlet />
           </div>

@@ -95,6 +95,9 @@ export function DeploymentsPage() {
       <div>
         <h2 className="text-2xl font-semibold">历史记录</h2>
         <p className="text-sm text-muted-foreground">统一查看证书续签与 CDN 部署的执行轨迹。</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          仅记录实际执行的续签与部署；如果定时扫描判断“当前无需续签”，不会生成历史记录。
+        </p>
       </div>
 
       <Card>
