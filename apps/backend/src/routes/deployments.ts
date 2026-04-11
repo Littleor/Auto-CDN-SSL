@@ -45,7 +45,8 @@ const deploymentRoutes: FastifyPluginAsync = async (app) => {
       siteId: site.id,
       domain: site.domain,
       certificate: cert,
-      providerCredential: credential
+      providerCredential: credential,
+      triggerSource: "manual_deploy"
     });
     reply.code(201).send(record);
   });

@@ -15,6 +15,7 @@ import userSettingsRoutes from "./routes/userSettings.js";
 import certificateRoutes from "./routes/certificates.js";
 import deploymentRoutes from "./routes/deployments.js";
 import jobsRoutes from "./routes/jobs.js";
+import historyRoutes from "./routes/history.js";
 
 export async function buildApp() {
   await migrate();
@@ -70,6 +71,7 @@ export async function buildApp() {
   await app.register(certificateRoutes, { prefix: "/certificates" });
   await app.register(deploymentRoutes, { prefix: "/deployments" });
   await app.register(jobsRoutes, { prefix: "/jobs" });
+  await app.register(historyRoutes, { prefix: "/history" });
 
   return app;
 }

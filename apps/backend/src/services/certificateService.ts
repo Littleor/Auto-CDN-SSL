@@ -7,7 +7,7 @@ import { createJob, finishJob, startJob, updateJobMessage } from "./jobService.j
 import { Site } from "./siteService.js";
 import { decryptProviderConfig } from "./providerService.js";
 import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService.js";
-import { resolveAcmeChallenge } from "./acmeChallengeService.js";
+import { ResolvedAcmeChallenge, resolveAcmeChallenge } from "./acmeChallengeService.js";
 import { getErrorMessage } from "../utils/errors.js";
 
 export type CertificateRecord = {
@@ -22,6 +22,17 @@ export type CertificateRecord = {
   key_pem_enc: string;
   chain_pem_enc: string;
   created_at: string;
+};
+
+type IssueTriggerSource = "manual_renew" | "scheduled_renew";
+
+type IssueExecutionContext = {
+  resolvedSettings: ResolvedUserSettings;
+  challenge?: ResolvedAcmeChallenge;
+};
+
+type IssueRequestOptions = {
+  triggerSource: IssueTriggerSource;
 };
 
 export async function getLatestCertificateForSite(siteId: string): Promise<CertificateRecord | null> {
@@ -105,19 +116,71 @@ async function insertCertificate(siteId: string, cert: {
   return record;
 }
 
-async function runIssueJob(site: Site, jobId: string, settings?: ResolvedUserSettings) {
+async function prepareIssueExecutionContext(
+  site: Site,
+  settings?: ResolvedUserSettings
+): Promise<IssueExecutionContext> {
   const resolvedSettings = settings ?? (await getResolvedUserSettings(site.user_id));
+  const challenge =
+    site.certificate_source === "letsencrypt"
+      ? await resolveAcmeChallenge({
+          userId: site.user_id,
+          domain: site.domain,
+          siteProviderCredentialId: site.provider_credential_id
+        })
+      : undefined;
+
+  return {
+    resolvedSettings,
+    challenge
+  };
+}
+
+function getIssueProviderSnapshot(site: Site, context: IssueExecutionContext) {
+  if (site.certificate_source === "self_signed") {
+    return {
+      providerCredentialId: null,
+      providerType: "self_signed",
+      providerName: "自签证书"
+    };
+  }
+
+  if (!context.challenge) {
+    return {
+      providerCredentialId: null,
+      providerType: "letsencrypt",
+      providerName: "Let's Encrypt"
+    };
+  }
+
+  if (context.challenge.challengeType === "http-01") {
+    return {
+      providerCredentialId: null,
+      providerType: "http-01",
+      providerName: "HTTP-01 验证"
+    };
+  }
+
+  return {
+    providerCredentialId: context.challenge.dnsCredentialId,
+    providerType: context.challenge.dnsCredential?.provider_type ?? "dns-01",
+    providerName: context.challenge.dnsCredential?.name ?? "DNS-01 验证"
+  };
+}
+
+async function runIssueJob(site: Site, jobId: string, context: IssueExecutionContext) {
+  const resolvedSettings = context.resolvedSettings;
   await updateJobMessage(jobId, "准备证书申请");
   const sans: string[] = [];
   let cert;
   if (site.certificate_source === "letsencrypt") {
     await updateJobMessage(jobId, "准备 ACME 校验");
     let dnsConfig = undefined;
-    const challenge = await resolveAcmeChallenge({
+    const challenge = context.challenge ?? (await resolveAcmeChallenge({
       userId: site.user_id,
       domain: site.domain,
       siteProviderCredentialId: site.provider_credential_id
-    });
+    }));
     const challengeType = challenge.challengeType;
 
     if (challengeType === "dns-01") {
@@ -148,11 +211,25 @@ async function runIssueJob(site: Site, jobId: string, settings?: ResolvedUserSet
   return insertCertificate(site.id, cert);
 }
 
-export async function issueCertificateForSite(site: Site, settings?: ResolvedUserSettings) {
-  const job = await createJob(site.id, "renew");
+export async function issueCertificateForSite(
+  site: Site,
+  settings?: ResolvedUserSettings,
+  options: IssueRequestOptions = { triggerSource: "manual_renew" }
+) {
+  const context = await prepareIssueExecutionContext(site, settings);
+  const providerSnapshot = getIssueProviderSnapshot(site, context);
+  const job = await createJob({
+    siteId: site.id,
+    type: "renew",
+    domain: site.domain,
+    triggerSource: options.triggerSource,
+    providerCredentialId: providerSnapshot.providerCredentialId,
+    providerType: providerSnapshot.providerType,
+    providerName: providerSnapshot.providerName
+  });
   await startJob(job.id);
   try {
-    const record = await runIssueJob(site, job.id, settings);
+    const record = await runIssueJob(site, job.id, context);
     await finishJob(job.id, "success");
     return record;
   } catch (error: unknown) {
@@ -161,13 +238,27 @@ export async function issueCertificateForSite(site: Site, settings?: ResolvedUse
   }
 }
 
-export async function enqueueCertificateIssue(site: Site, settings?: ResolvedUserSettings) {
-  const job = await createJob(site.id, "renew");
+export async function enqueueCertificateIssue(
+  site: Site,
+  settings?: ResolvedUserSettings,
+  options: IssueRequestOptions = { triggerSource: "manual_renew" }
+) {
+  const context = await prepareIssueExecutionContext(site, settings);
+  const providerSnapshot = getIssueProviderSnapshot(site, context);
+  const job = await createJob({
+    siteId: site.id,
+    type: "renew",
+    domain: site.domain,
+    triggerSource: options.triggerSource,
+    providerCredentialId: providerSnapshot.providerCredentialId,
+    providerType: providerSnapshot.providerType,
+    providerName: providerSnapshot.providerName
+  });
   await startJob(job.id);
   setTimeout(() => {
     void (async () => {
       try {
-        await runIssueJob(site, job.id, settings);
+        await runIssueJob(site, job.id, context);
         await finishJob(job.id, "success");
       } catch (error: unknown) {
         try {

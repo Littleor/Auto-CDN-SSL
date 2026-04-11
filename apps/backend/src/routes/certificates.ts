@@ -25,7 +25,7 @@ const certificateRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(404).send({ message: "Site not found" });
     }
     if (query.mode === "sync") {
-      const cert = await issueCertificateForSite(site);
+      const cert = await issueCertificateForSite(site, undefined, { triggerSource: "manual_renew" });
       reply.code(201).send({
         id: cert.id,
         siteId: cert.site_id,
@@ -37,7 +37,7 @@ const certificateRoutes: FastifyPluginAsync = async (app) => {
       return;
     }
 
-    const job = await enqueueCertificateIssue(site);
+    const job = await enqueueCertificateIssue(site, undefined, { triggerSource: "manual_renew" });
     reply.code(202).send({ jobId: job.jobId });
   });
 };

@@ -11,7 +11,7 @@ const navItems = [
   { to: "/app/domain-settings", label: "域名验证", icon: ShieldCheck },
   { to: "/app/providers", label: "CDN 凭据", icon: Cloud },
   { to: "/app/dns-providers", label: "DNS 凭据", icon: Server },
-  { to: "/app/deployments", label: "部署记录", icon: ScrollText }
+  { to: "/app/deployments", label: "历史记录", icon: ScrollText }
 ];
 
 export function AppShell() {

@@ -5,6 +5,11 @@ export type Job = {
   id: string;
   site_id: string;
   type: string;
+  domain: string | null;
+  provider_credential_id: string | null;
+  provider_type: string | null;
+  provider_name: string | null;
+  trigger_source: string;
   status: string;
   message: string | null;
   started_at: string | null;
@@ -12,13 +17,26 @@ export type Job = {
   created_at: string;
 };
 
-export async function createJob(siteId: string, type: string): Promise<Job> {
+export async function createJob(params: {
+  siteId: string;
+  type: string;
+  domain: string;
+  triggerSource: "manual_renew" | "scheduled_renew";
+  providerCredentialId?: string | null;
+  providerType?: string | null;
+  providerName?: string | null;
+}): Promise<Job> {
   const db = getDb();
   const now = new Date().toISOString();
   const job: Job = {
     id: nanoid(),
-    site_id: siteId,
-    type,
+    site_id: params.siteId,
+    type: params.type,
+    domain: params.domain,
+    provider_credential_id: params.providerCredentialId ?? null,
+    provider_type: params.providerType ?? null,
+    provider_name: params.providerName ?? null,
+    trigger_source: params.triggerSource,
     status: "queued",
     message: null,
     started_at: null,
@@ -27,13 +45,20 @@ export async function createJob(siteId: string, type: string): Promise<Job> {
   };
   await db
     .prepare(
-      `INSERT INTO jobs (id, site_id, type, status, message, started_at, finished_at, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO jobs (
+        id, site_id, type, domain, provider_credential_id, provider_type, provider_name, trigger_source,
+        status, message, started_at, finished_at, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       job.id,
       job.site_id,
       job.type,
+      job.domain,
+      job.provider_credential_id,
+      job.provider_type,
+      job.provider_name,
+      job.trigger_source,
       job.status,
       job.message,
       job.started_at,

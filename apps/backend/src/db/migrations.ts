@@ -202,5 +202,46 @@ export const migrations: Migration[] = [
     sql: `
     ALTER TABLE sites DROP COLUMN auto_deploy;
     `
+  },
+  {
+    id: "012_history_context",
+    sql: `
+    ALTER TABLE jobs ADD COLUMN domain VARCHAR(255);
+    ALTER TABLE jobs ADD COLUMN provider_credential_id VARCHAR(32);
+    ALTER TABLE jobs ADD COLUMN provider_type VARCHAR(32);
+    ALTER TABLE jobs ADD COLUMN provider_name VARCHAR(255);
+    ALTER TABLE jobs ADD COLUMN trigger_source VARCHAR(32) NOT NULL DEFAULT 'manual_renew';
+
+    ALTER TABLE deployments ADD COLUMN domain VARCHAR(255);
+    ALTER TABLE deployments ADD COLUMN provider_credential_id VARCHAR(32);
+    ALTER TABLE deployments ADD COLUMN provider_name VARCHAR(255);
+    ALTER TABLE deployments ADD COLUMN trigger_source VARCHAR(32) NOT NULL DEFAULT 'manual_deploy';
+
+    UPDATE jobs j
+    JOIN sites s ON s.id = j.site_id
+    LEFT JOIN provider_credentials p ON p.id = s.provider_credential_id
+    SET
+      j.domain = COALESCE(j.domain, s.domain),
+      j.provider_credential_id = COALESCE(j.provider_credential_id, s.provider_credential_id),
+      j.provider_type = COALESCE(j.provider_type, p.provider_type),
+      j.provider_name = COALESCE(j.provider_name, p.name)
+    WHERE
+      j.domain IS NULL
+      OR j.provider_credential_id IS NULL
+      OR j.provider_type IS NULL
+      OR j.provider_name IS NULL;
+
+    UPDATE deployments d
+    JOIN sites s ON s.id = d.site_id
+    LEFT JOIN provider_credentials p ON p.id = s.provider_credential_id
+    SET
+      d.domain = COALESCE(d.domain, s.domain),
+      d.provider_credential_id = COALESCE(d.provider_credential_id, s.provider_credential_id),
+      d.provider_name = COALESCE(d.provider_name, p.name)
+    WHERE
+      d.domain IS NULL
+      OR d.provider_credential_id IS NULL
+      OR d.provider_name IS NULL;
+    `
   }
 ];

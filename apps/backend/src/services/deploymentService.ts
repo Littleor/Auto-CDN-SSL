@@ -10,7 +10,11 @@ export type DeploymentRecord = {
   id: string;
   site_id: string;
   certificate_id: string;
+  domain: string;
+  provider_credential_id: string;
   provider_type: string;
+  provider_name: string;
+  trigger_source: string;
   status: string;
   message: string | null;
   created_at: string;
@@ -21,13 +25,18 @@ export async function deployCertificate(params: {
   domain: string;
   certificate: CertificateRecord;
   providerCredential: ProviderCredential;
+  triggerSource: "manual_deploy" | "scheduled_deploy";
 }) {
   const db = getDb();
   const record: DeploymentRecord = {
     id: nanoid(),
     site_id: params.siteId,
     certificate_id: params.certificate.id,
+    domain: params.domain,
+    provider_credential_id: params.providerCredential.id,
     provider_type: params.providerCredential.provider_type,
+    provider_name: params.providerCredential.name,
+    trigger_source: params.triggerSource,
     status: "running",
     message: null,
     created_at: new Date().toISOString()
@@ -35,14 +44,20 @@ export async function deployCertificate(params: {
 
   await db
     .prepare(
-      `INSERT INTO deployments (id, site_id, certificate_id, provider_type, status, message, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO deployments (
+        id, site_id, certificate_id, domain, provider_credential_id, provider_type, provider_name, trigger_source,
+        status, message, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       record.id,
       record.site_id,
       record.certificate_id,
+      record.domain,
+      record.provider_credential_id,
       record.provider_type,
+      record.provider_name,
+      record.trigger_source,
       record.status,
       record.message,
       record.created_at

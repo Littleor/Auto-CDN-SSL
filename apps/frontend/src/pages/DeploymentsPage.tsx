@@ -5,58 +5,99 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import {
+  getBadgeVariantByStatus,
+  getCertificateStatusLabel,
+  getHistoryCategoryLabel,
+  getHistoryTriggerLabel,
+  getPlatformLabel
+} from "@/lib/statusDisplay";
+
+type HistoryRecord = {
+  id: string;
+  category: "renew" | "deploy";
+  siteId: string;
+  domain: string | null;
+  providerCredentialId: string | null;
+  providerType: string | null;
+  providerName: string | null;
+  triggerSource: string;
+  status: string;
+  message: string | null;
+  occurredAt: string;
+  createdAt: string;
+};
 
 export function DeploymentsPage() {
   const { accessToken } = useAuth();
-  const [deployments, setDeployments] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
 
   useEffect(() => {
     if (!accessToken) return;
-    apiRequest<any[]>("/deployments", {}, accessToken).then(setDeployments);
+    apiRequest<HistoryRecord[]>("/history", {}, accessToken).then(setHistory);
   }, [accessToken]);
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold">部署记录</h2>
-        <p className="text-sm text-muted-foreground">追踪 CDN 证书部署结果与失败原因。</p>
+        <h2 className="text-2xl font-semibold">历史记录</h2>
+        <p className="text-sm text-muted-foreground">统一查看证书续签与 CDN 部署的执行轨迹。</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>最近部署</CardTitle>
+          <CardTitle>最近历史</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>平台</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>域名</TableHead>
+                <TableHead>平台 / 凭据</TableHead>
+                <TableHead>方式</TableHead>
                 <TableHead>状态</TableHead>
                 <TableHead>时间</TableHead>
                 <TableHead>备注</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {deployments.map((deployment) => (
-                <TableRow key={deployment.id}>
-                  <TableCell>{deployment.provider_type}</TableCell>
+              {history.map((item) => (
+                <TableRow key={`${item.category}-${item.id}`}>
                   <TableCell>
-                    <Badge
-                      variant={deployment.status === "success" ? "success" : deployment.status === "failed" ? "warning" : "muted"}
-                    >
-                      {deployment.status}
+                    <Badge variant="muted">{getHistoryCategoryLabel(item.category)}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{item.domain || "-"}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="min-w-[180px]">
+                      <div className="text-sm font-medium">
+                        {getPlatformLabel(item.providerType)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {item.providerName || item.providerCredentialId || "-"}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {getHistoryTriggerLabel(item.triggerSource)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getBadgeVariantByStatus(item.status)}>
+                      {getCertificateStatusLabel(item.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatDate(deployment.created_at)}</TableCell>
+                  <TableCell>{formatDate(item.occurredAt)}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {deployment.message || "-"}
+                    {item.message || "-"}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-          {deployments.length === 0 && (
-            <div className="py-12 text-center text-sm text-muted-foreground">暂无部署记录。</div>
+          {history.length === 0 && (
+            <div className="py-12 text-center text-sm text-muted-foreground">暂无历史记录。</div>
           )}
         </CardContent>
       </Card>

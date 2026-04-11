@@ -26,7 +26,9 @@ function shouldRenew(site: Site, settings: ResolvedUserSettings, expiresAt?: str
 async function processSite(site: Site, settings: ResolvedUserSettings) {
   const latestCert = await getLatestCertificateForSite(site.id);
   if (!shouldRenew(site, settings, latestCert?.expires_at)) return;
-  const newCert = await issueCertificateForSite(site, settings);
+  const newCert = await issueCertificateForSite(site, settings, {
+    triggerSource: "scheduled_renew"
+  });
   if (site.provider_credential_id && settings.autoDeploy) {
     const credential = await getProviderCredential(site.user_id, site.provider_credential_id);
     if (credential) {
@@ -34,7 +36,8 @@ async function processSite(site: Site, settings: ResolvedUserSettings) {
         siteId: site.id,
         domain: site.domain,
         certificate: newCert,
-        providerCredential: credential
+        providerCredential: credential,
+        triggerSource: "scheduled_deploy"
       });
     }
   }

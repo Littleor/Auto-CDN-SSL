@@ -10,6 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/api";
 import { daysUntil, formatDate } from "@/lib/format";
+import {
+  getBadgeVariantByStatus,
+  getCdnStatusLabel,
+  getCertificateStatusLabel,
+  getHttpsStatusLabel,
+  getPlatformLabel
+} from "@/lib/statusDisplay";
 
 const defaultForm = {
   name: "",
@@ -38,12 +45,19 @@ export function SitesPage() {
     () => providers.filter((provider) => ["tencent", "qiniu"].includes(provider.providerType)),
     [providers]
   );
-  const providerLabel = (providerType: string) => {
-    if (providerType === "tencent") return "腾讯云 CDN";
-    if (providerType === "qiniu") return "七牛云 CDN";
-    if (providerType === "tencent_dns") return "腾讯云 DNS";
-    return providerType;
-  };
+  const providerById = useMemo(
+    () =>
+      new Map(
+        providers.map((provider) => [
+          provider.id,
+          {
+            name: provider.name,
+            providerType: provider.providerType
+          }
+        ])
+      ),
+    [providers]
+  );
 
   const fetchData = () => {
     if (!accessToken) return;
@@ -258,7 +272,7 @@ export function SitesPage() {
                     <SelectContent>
                       {providerOptions.map((provider) => (
                         <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name} ({providerLabel(provider.providerType)})
+                          {provider.name} ({getPlatformLabel(provider.providerType)})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -282,6 +296,9 @@ export function SitesPage() {
       <Card>
         <CardHeader>
           <CardTitle>CDN 站点列表</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            HTTPS 配置表示 CDN 平台侧该域名当前是否已启用 HTTPS。
+          </p>
         </CardHeader>
         <CardContent>
           <Table>
@@ -292,7 +309,7 @@ export function SitesPage() {
                 <TableHead>到期时间</TableHead>
                 <TableHead>有效期进度</TableHead>
                 <TableHead>CDN 状态</TableHead>
-                <TableHead>HTTPS</TableHead>
+                <TableHead>HTTPS 配置（CDN侧）</TableHead>
                 <TableHead>平台</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
@@ -311,6 +328,9 @@ export function SitesPage() {
                 const providerStatus = site.providerStatus || site.provider_status;
                 const providerHttps = site.providerHttps || site.provider_https;
                 const hasLatest = Boolean(site.latestCertificate);
+                const boundProvider = site.providerCredentialId
+                  ? providerById.get(site.providerCredentialId)
+                  : null;
                 const hasRange = Boolean(displayIssuedAt && displayExpiresAt);
                 const totalDays = hasRange
                   ? Math.max(
@@ -332,14 +352,16 @@ export function SitesPage() {
                   remainingDays !== null ? Math.max(0, remainingDays) : null;
                 const ratioText =
                   hasRange && normalizedRemaining !== null && totalDays
-                    ? `${normalizedRemaining}/${totalDays}`
+                    ? remainingDays !== null && remainingDays < 0
+                      ? "已过期"
+                      : `${normalizedRemaining}/${totalDays} 天`
                     : "-";
                 const progress = hasRange
                   ? Math.min(
                       100,
                       Math.max(
                         0,
-                        ((Date.now() - new Date(displayIssuedAt!).getTime()) /
+                        ((new Date(displayExpiresAt!).getTime() - Date.now()) /
                           (new Date(displayExpiresAt!).getTime() -
                             new Date(displayIssuedAt!).getTime())) *
                           100
@@ -347,15 +369,16 @@ export function SitesPage() {
                     )
                   : 0;
                 const isOverdue = remainingDays !== null && remainingDays < 0;
-                const isUrgent = remainingDays !== null && remainingDays <= 7;
-                const progressTone = isOverdue
+                const isCritical = remainingDays !== null && remainingDays <= 30;
+                const isWarning = remainingDays !== null && remainingDays <= 60;
+                const progressTone = isOverdue || isCritical
                   ? "bg-destructive"
-                  : isUrgent
+                  : isWarning
                     ? "bg-amber-500"
                     : "bg-emerald-500";
-                const progressTextTone = isOverdue
+                const progressTextTone = isOverdue || isCritical
                   ? "text-destructive"
-                  : isUrgent
+                  : isWarning
                     ? "text-amber-600"
                     : "text-emerald-600";
                 const issueState = issuing[site.id] ?? "idle";
@@ -377,8 +400,8 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell>
                       {hasLatest ? (
-                        <Badge variant={days !== null && days <= 7 ? "warning" : "success"}>
-                          {site.latestCertificate.status}
+                        <Badge variant={days !== null && days <= 30 ? "warning" : "success"}>
+                          {getCertificateStatusLabel(site.latestCertificate.status)}
                         </Badge>
                       ) : providerExpiresAt ? (
                         <Badge variant={days !== null && days <= 0 ? "warning" : "muted"}>
@@ -410,28 +433,31 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell>
                       {providerStatus ? (
-                        <Badge
-                          variant={
-                            ["online", "success", "normal"].includes(providerStatus)
-                              ? "success"
-                              : ["offline", "disabled", "frozen"].includes(providerStatus)
-                                ? "warning"
-                                : "muted"
-                          }
-                        >
-                          {providerStatus}
+                        <Badge variant={getBadgeVariantByStatus(providerStatus)}>
+                          {getCdnStatusLabel(providerStatus)}
                         </Badge>
                       ) : (
                         <Badge variant="muted">-</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {providerHttps || "-"}
+                      {getHttpsStatusLabel(providerHttps)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
                         <Server className="h-3.5 w-3.5" />
-                        {site.providerCredentialId ? "已绑定" : "未绑定"}
+                        {boundProvider ? (
+                          <div className="text-left">
+                            <div className="text-xs font-medium text-foreground">
+                              {getPlatformLabel(boundProvider.providerType)}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {boundProvider.name}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">未绑定</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
