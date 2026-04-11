@@ -74,3 +74,14 @@ export function getHistoryTriggerLabel(triggerSource?: string | null) {
   if (normalized === "scheduled_deploy") return "自动部署";
   return triggerSource;
 }
+
+export function getHistoryTriggerVariant(triggerSource?: string | null) {
+  const normalized = triggerSource?.toLowerCase();
+  if (normalized === "scheduled_renew" || normalized === "scheduled_deploy") {
+    return "default" as const;
+  }
+  if (normalized === "manual_renew" || normalized === "manual_deploy") {
+    return "warning" as const;
+  }
+  return "muted" as const;
+}
