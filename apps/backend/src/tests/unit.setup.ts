@@ -1,0 +1,15 @@
+process.env.NODE_ENV = "test";
+process.env.JWT_SECRET = process.env.JWT_SECRET ?? "test-secret-1234567890";
+process.env.DATA_ENCRYPTION_KEY = process.env.DATA_ENCRYPTION_KEY ?? "test-encryption-key";
+process.env.MYSQL_HOST = process.env.MYSQL_HOST ?? "127.0.0.1";
+process.env.MYSQL_PORT = process.env.MYSQL_PORT ?? "3306";
+process.env.MYSQL_USER = process.env.MYSQL_USER ?? "root";
+process.env.MYSQL_PASSWORD = process.env.MYSQL_PASSWORD ?? "";
+process.env.MYSQL_DATABASE = process.env.MYSQL_DATABASE ?? "auto_ssl_test";
+process.env.SMTP_HOST = process.env.SMTP_HOST ?? "smtp.test.local";
+process.env.SMTP_PORT = process.env.SMTP_PORT ?? "465";
+process.env.SMTP_USER = process.env.SMTP_USER ?? "no_reply@test.local";
+process.env.SMTP_PASSWORD = process.env.SMTP_PASSWORD ?? "test-password";
+process.env.FROM_EMAIL = process.env.FROM_EMAIL ?? "no_reply@test.local";
+process.env.WEB_BASE_URL = process.env.WEB_BASE_URL ?? "http://localhost:5173";
+process.env.ACME_ACCOUNT_EMAIL = process.env.ACME_ACCOUNT_EMAIL ?? "real@test.local";

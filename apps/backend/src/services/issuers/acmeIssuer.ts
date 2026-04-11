@@ -7,6 +7,7 @@ import { setChallenge, removeChallenge } from "./challengeStore.js";
 import { createTxtRecord, deleteRecord, TencentDnsConfig } from "../../providers/tencentDns.js";
 import { setDnsRecord, getDnsRecord, removeDnsRecord } from "./dnsRecordStore.js";
 import { IssuedCertificate } from "./selfSignedIssuer.js";
+import { getErrorMessage } from "../../utils/errors.js";
 
 const accountStorePath = path.resolve(process.cwd(), "data", "acme-account.json");
 
@@ -53,6 +54,36 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function normalizeAcmeError(
+  error: unknown,
+  params: { challengeType: "http-01" | "dns-01"; domain: string }
+) {
+  const message = getErrorMessage(error);
+
+  if (message.includes("Cannot read properties of undefined (reading 'config')")) {
+    if (params.challengeType === "http-01") {
+      return new Error(
+        `HTTP-01 校验失败：${params.domain} 当前无法稳定从公网访问到本服务，默认建议改用 DNS-01，或检查 80 端口、回源和挑战路径配置。`
+      );
+    }
+    return new Error(
+      `DNS-01 校验失败：ACME 请求过程中出现网络异常。请检查 DNS 凭据、域名解析托管与外网连通性后重试。`
+    );
+  }
+
+  if (message.includes("status code 404")) {
+    return new Error(
+      `HTTP-01 校验失败：请确保 ${params.domain} 的 80 端口能访问到本服务的 /.well-known/acme-challenge 路径`
+    );
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(message);
+}
+
 export async function issueAcme(
   domain: string,
   sans: string[],
@@ -70,26 +101,26 @@ export async function issueAcme(
   if (accountEmail.toLowerCase().endsWith("@example.com")) {
     throw new Error("ACME_ACCOUNT_EMAIL must be a real email (example.com is not allowed)");
   }
-  const accountKey = await loadAccountKey();
-  const client = new acme.Client({
-    directoryUrl,
-    accountKey
-  });
-
-  await client.createAccount({
-    termsOfServiceAgreed: true,
-    contact: [`mailto:${accountEmail}`]
-  });
-
-  const [key, csr] = await acme.forge.createCsr({
-    commonName: domain,
-    altNames: [domain, ...sans]
-  });
-
   const challengeType = options.challengeType ?? "http-01";
   const dnsConfig = options.dnsConfig;
 
   try {
+    const accountKey = await loadAccountKey();
+    const client = new acme.Client({
+      directoryUrl,
+      accountKey
+    });
+
+    await client.createAccount({
+      termsOfServiceAgreed: true,
+      contact: [`mailto:${accountEmail}`]
+    });
+
+    const [key, csr] = await acme.forge.createCsr({
+      commonName: domain,
+      altNames: [domain, ...sans]
+    });
+
     const cert = await client.auto({
       csr,
       email: accountEmail,
@@ -144,13 +175,7 @@ export async function issueAcme(
       issuedAt,
       expiresAt
     };
-  } catch (error: any) {
-    const message = error?.message ?? "";
-    if (message.includes("status code 404")) {
-      throw new Error(
-        `HTTP-01 校验失败：请确保 ${domain} 的 80 端口能访问到本服务的 /.well-known/acme-challenge 路径`
-      );
-    }
-    throw error;
+  } catch (error: unknown) {
+    throw normalizeAcmeError(error, { challengeType, domain });
   }
 }

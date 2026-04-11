@@ -2,8 +2,10 @@ import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { listSites } from "../services/siteService.js";
 import { getProviderCredential } from "../services/providerService.js";
+import { listProviderCredentials } from "../services/providerService.js";
 import { getApexDomain } from "../utils/domain.js";
 import { listDomainSettings, upsertDomainSetting } from "../services/domainSettingsService.js";
+import { resolveAcmeChallenge } from "../services/acmeChallengeService.js";
 
 const DomainSettingSchema = z.object({
   challengeType: z.enum(["http-01", "dns-01"]),
@@ -14,56 +16,49 @@ const domainSettingsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/", { preHandler: [app.authenticate] }, async (request: any) => {
     const userId = request.user.sub;
     const sites = await listSites(userId);
+    const providerCredentials = await listProviderCredentials(userId);
     const apexDomains = new Set<string>();
-    const inferred = new Map<string, { challengeType: "http-01" | "dns-01"; dnsCredentialId: string | null }>();
 
     for (const site of sites) {
       const apex = getApexDomain(site.domain);
       if (!apex) continue;
       apexDomains.add(apex);
-      if (
-        site.acme_challenge_type === "dns-01" &&
-        site.dns_credential_id &&
-        !inferred.has(apex)
-      ) {
-        inferred.set(apex, {
-          challengeType: "dns-01",
-          dnsCredentialId: site.dns_credential_id
-        });
-      }
     }
 
     const settings = await listDomainSettings(userId);
     const settingMap = new Map(settings.map((item) => [item.apex_domain, item]));
 
-    return Array.from(apexDomains)
-      .sort()
-      .map((apexDomain) => {
-        const setting = settingMap.get(apexDomain);
-        if (setting) {
+    return Promise.all(
+      Array.from(apexDomains)
+        .sort()
+        .map(async (apexDomain) => {
+          const setting = settingMap.get(apexDomain);
+          if (setting) {
+            return {
+              apexDomain,
+              challengeType: setting.challenge_type,
+              dnsCredentialId: setting.dns_credential_id,
+              source: "configured" as const
+            };
+          }
+
+          const resolved = await resolveAcmeChallenge({
+            userId,
+            domain: apexDomain,
+            context: {
+              sites,
+              providerCredentials
+            }
+          });
+
           return {
             apexDomain,
-            challengeType: setting.challenge_type,
-            dnsCredentialId: setting.dns_credential_id,
-            source: "configured"
+            challengeType: resolved.challengeType,
+            dnsCredentialId: resolved.dnsCredentialId,
+            source: resolved.source === "default" ? "default" : "inferred"
           };
-        }
-        const inferredSetting = inferred.get(apexDomain);
-        if (inferredSetting) {
-          return {
-            apexDomain,
-            challengeType: inferredSetting.challengeType,
-            dnsCredentialId: inferredSetting.dnsCredentialId,
-            source: "inferred"
-          };
-        }
-        return {
-          apexDomain,
-          challengeType: "http-01",
-          dnsCredentialId: null,
-          source: "default"
-        };
-      });
+        })
+    );
   });
 
   app.put("/:apex", { preHandler: [app.authenticate] }, async (request: any, reply) => {

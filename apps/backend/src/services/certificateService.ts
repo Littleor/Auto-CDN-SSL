@@ -4,11 +4,11 @@ import { encrypt } from "../utils/crypto.js";
 import { issueSelfSigned } from "./issuers/selfSignedIssuer.js";
 import { issueAcme } from "./issuers/acmeIssuer.js";
 import { createJob, finishJob, startJob, updateJobMessage } from "./jobService.js";
-import { Site, listSites } from "./siteService.js";
-import { getProviderCredential, decryptProviderConfig } from "./providerService.js";
-import { getDomainSetting } from "./domainSettingsService.js";
-import { getApexDomain } from "../utils/domain.js";
+import { Site } from "./siteService.js";
+import { decryptProviderConfig } from "./providerService.js";
 import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService.js";
+import { resolveAcmeChallenge } from "./acmeChallengeService.js";
+import { getErrorMessage } from "../utils/errors.js";
 
 export type CertificateRecord = {
   id: string;
@@ -111,47 +111,32 @@ async function runIssueJob(site: Site, jobId: string, settings?: ResolvedUserSet
   const sans: string[] = [];
   let cert;
   if (site.certificate_source === "letsencrypt") {
-    await updateJobMessage(jobId, "进行 ACME 校验");
+    await updateJobMessage(jobId, "准备 ACME 校验");
     let dnsConfig = undefined;
-    let challengeType: "http-01" | "dns-01" = "http-01";
-    let dnsCredentialId: string | null = null;
-    const apexDomain = getApexDomain(site.domain);
-    if (apexDomain) {
-      const setting = await getDomainSetting(site.user_id, apexDomain);
-      if (setting) {
-        challengeType = setting.challenge_type;
-        dnsCredentialId = setting.dns_credential_id ?? null;
-      } else {
-        const inferred = (await listSites(site.user_id)).find(
-          (item) =>
-            getApexDomain(item.domain) === apexDomain &&
-            item.acme_challenge_type === "dns-01" &&
-            item.dns_credential_id
-        );
-        if (inferred?.dns_credential_id) {
-          challengeType = "dns-01";
-          dnsCredentialId = inferred.dns_credential_id;
-        }
-      }
-    }
+    const challenge = await resolveAcmeChallenge({
+      userId: site.user_id,
+      domain: site.domain,
+      siteProviderCredentialId: site.provider_credential_id
+    });
+    const challengeType = challenge.challengeType;
+
     if (challengeType === "dns-01") {
-      if (!dnsCredentialId) {
-        throw new Error("DNS 凭据未配置");
+      if (!challenge.dnsCredential) {
+        throw new Error(
+          "默认使用 DNS-01 续签，但未找到可用的腾讯云 DNS 凭据。请先在“域名验证”中绑定 DNS 凭据，或为站点绑定可复用的腾讯云凭据。"
+        );
       }
-      const credential = await getProviderCredential(site.user_id, dnsCredentialId);
-      if (!credential) {
-        throw new Error("DNS 凭据不存在");
-      }
-      if (!["tencent", "tencent_dns"].includes(credential.provider_type)) {
-        throw new Error("当前仅支持腾讯云 DNS 凭据");
-      }
-      dnsConfig = decryptProviderConfig(credential) as any;
+      await updateJobMessage(jobId, "使用 DNS-01 进行 ACME 校验");
+      dnsConfig = decryptProviderConfig(challenge.dnsCredential) as any;
+    } else {
+      await updateJobMessage(jobId, "使用 HTTP-01 进行 ACME 校验");
     }
+
     cert = await issueAcme(site.domain, sans, {
       challengeType,
       dnsConfig,
       onMessage: (message) => {
-        void updateJobMessage(jobId, message);
+        void updateJobMessage(jobId, message).catch(() => undefined);
       },
       config: resolvedSettings.acme
     });
@@ -170,8 +155,8 @@ export async function issueCertificateForSite(site: Site, settings?: ResolvedUse
     const record = await runIssueJob(site, job.id, settings);
     await finishJob(job.id, "success");
     return record;
-  } catch (error: any) {
-    await finishJob(job.id, "failed", error?.message ?? "issue failed");
+  } catch (error: unknown) {
+    await finishJob(job.id, "failed", getErrorMessage(error, "issue failed"));
     throw error;
   }
 }
@@ -179,13 +164,19 @@ export async function issueCertificateForSite(site: Site, settings?: ResolvedUse
 export async function enqueueCertificateIssue(site: Site, settings?: ResolvedUserSettings) {
   const job = await createJob(site.id, "renew");
   await startJob(job.id);
-  setTimeout(async () => {
-    try {
-      await runIssueJob(site, job.id, settings);
-      await finishJob(job.id, "success");
-    } catch (error: any) {
-      await finishJob(job.id, "failed", error?.message ?? "issue failed");
-    }
+  setTimeout(() => {
+    void (async () => {
+      try {
+        await runIssueJob(site, job.id, settings);
+        await finishJob(job.id, "success");
+      } catch (error: unknown) {
+        try {
+          await finishJob(job.id, "failed", getErrorMessage(error, "issue failed"));
+        } catch {
+          // Ignore secondary job update failures to avoid unhandled rejections.
+        }
+      }
+    })();
   }, 0);
   return { jobId: job.id };
 }

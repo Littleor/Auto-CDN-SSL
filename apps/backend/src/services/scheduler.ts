@@ -5,6 +5,7 @@ import { getProviderCredential } from "./providerService.js";
 import { deployCertificate } from "./deploymentService.js";
 import { getResolvedUserSettings, ResolvedUserSettings } from "./userSettingsService.js";
 import { listUsers } from "./userService.js";
+import { getErrorMessage, getErrorStack } from "../utils/errors.js";
 
 const scheduledTasks = new Map<string, ScheduledTask>();
 let schedulerStarted = false;
@@ -45,10 +46,15 @@ async function processUser(userId: string) {
   for (const site of sites) {
     try {
       await processSite(site, settings);
-    } catch (error) {
+    } catch (error: unknown) {
       // best-effort; individual site failures should not stop schedule
       // eslint-disable-next-line no-console
-      console.error("Scheduled renewal failed", error);
+      console.error(`Scheduled renewal failed for ${site.domain}: ${getErrorMessage(error, "unknown error")}`);
+      const stack = getErrorStack(error);
+      if (stack) {
+        // eslint-disable-next-line no-console
+        console.error(stack);
+      }
     }
   }
 }
@@ -56,8 +62,16 @@ async function processUser(userId: string) {
 async function scheduleUser(userId: string) {
   const settings = await getResolvedUserSettings(userId);
   const expression = buildCronExpression(settings.renewalHour, settings.renewalMinute);
-  const task = cron.schedule(expression, async () => {
-    await processUser(userId);
+  const task = cron.schedule(expression, () => {
+    void processUser(userId).catch((error: unknown) => {
+      // eslint-disable-next-line no-console
+      console.error(`Scheduled renewal runner failed for user ${userId}: ${getErrorMessage(error, "unknown error")}`);
+      const stack = getErrorStack(error);
+      if (stack) {
+        // eslint-disable-next-line no-console
+        console.error(stack);
+      }
+    });
   });
   scheduledTasks.set(userId, task);
 }
