@@ -68,7 +68,7 @@ export async function syncProviderSites(userId: string, credential: ProviderCred
       item.domain,
       credential.id,
       "letsencrypt",
-      0,
+      1,
       30,
       "active",
       item.status,
