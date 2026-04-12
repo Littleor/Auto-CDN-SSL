@@ -106,4 +106,3 @@ export function usePageSeo({
     };
   }, [description, image, keywords, path, robots, structuredData, title, type]);
 }
-
