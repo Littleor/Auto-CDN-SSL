@@ -10,7 +10,7 @@ import { usePageSeo } from "@/lib/seo";
 const introRows = [
   "证书状态、部署记录与凭据管理统一放在一个工作台中。",
   "登录后会直接回到新的系统管理界面。",
-  "整体风格已经切到更克制的极简系统层。"
+  "临近到期站点与最近动作会优先显示。"
 ];
 
 export function LoginPage() {
@@ -50,12 +50,11 @@ export function LoginPage() {
             <div>
               <BrandMark />
               <div className="mt-10 max-w-3xl">
-                <div className="section-label">Console Access</div>
-                <h1 className="mt-3 max-w-2xl text-[2.2rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground md:text-[3.4rem]">
+                <h1 className="max-w-2xl text-[2.2rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground md:text-[3.4rem]">
                   登录后继续处理你的 CDN 证书工作流
                 </h1>
                 <p className="mt-4 max-w-[58ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
-                  后台已经改成更简洁的大面留白和细边框系统，登录后会直接进入新的管理骨架。
+                  登录后即可继续管理站点、验证策略、平台凭据和部署动作。
                 </p>
               </div>
 
@@ -84,8 +83,7 @@ export function LoginPage() {
 
           <section className="surface flex items-center p-5 md:p-6">
             <div className="mx-auto w-full max-w-xl">
-              <div className="section-label">Sign In</div>
-              <h2 className="mt-2 text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
+              <h2 className="text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
                 登录控制台
               </h2>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">

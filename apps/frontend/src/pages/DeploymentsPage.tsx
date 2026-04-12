@@ -95,27 +95,13 @@ export function DeploymentsPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="History Feed"
-        title="把续签与部署的执行轨迹放到一个可以长期回溯的时间面板里"
-        description="除了视觉统一，这页也把搜索、复制备注和空状态都整理进了同一套界面表达，查错时会更顺手。"
-        stats={[
-          {
-            label: "历史总数",
-            value: String(history.length),
-            hint: "已记录的续签与部署动作"
-          },
-          {
-            label: "当前结果",
-            value: String(filteredHistory.length),
-            hint: "当前搜索条件下的匹配结果"
-          }
-        ]}
+        title="历史记录"
+        description="查看续签和部署的执行轨迹。"
       />
 
       <Card className="p-1">
         <CardHeader className="gap-4">
           <div>
-            <div className="section-label">Recent Events</div>
             <CardTitle>最近历史</CardTitle>
             <p className="mt-2 text-sm text-muted-foreground">自动与手动操作会使用不同颜色标识，便于快速分辨来源。</p>
             <p className="mt-1 text-xs text-muted-foreground">

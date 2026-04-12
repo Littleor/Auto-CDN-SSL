@@ -63,8 +63,7 @@ export function RegisterPage() {
         <div className="grid min-h-[calc(100dvh-3rem)] gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <section className="surface flex items-center p-5 md:p-6 lg:order-2">
             <div className="mx-auto w-full max-w-xl">
-              <div className="section-label">Create Account</div>
-              <h2 className="mt-2 text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
+              <h2 className="text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
                 创建开发者账号
               </h2>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
@@ -143,12 +142,11 @@ export function RegisterPage() {
             <div>
               <BrandMark />
               <div className="mt-10 max-w-3xl">
-                <div className="section-label">Create Workspace</div>
-                <h1 className="mt-3 max-w-2xl text-[2.2rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground md:text-[3.4rem]">
+                <h1 className="max-w-2xl text-[2.2rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground md:text-[3.4rem]">
                   从一开始就用更简洁的后台维护 CDN 证书
                 </h1>
                 <p className="mt-4 max-w-[58ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
-                  这次改版把公开页、登录注册和系统管理骨架拉回到同一套极简系统里，后续继续调整风格也能从全局出发。
+                  注册后即可在同一套后台里接入站点、配置验证、管理凭据并查看续签与部署记录。
                 </p>
               </div>
 

@@ -1,43 +1,85 @@
 import {
   ArrowRight,
   Certificate,
-  Cloud,
   ClockCountdown,
-  Database,
   GlobeHemisphereWest,
   Lock,
   ShieldCheck
 } from "@phosphor-icons/react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { BrandMark } from "@/components/BrandMark";
+import { LandingShowcase } from "@/components/marketing/LandingShowcase";
 import { Button } from "@/components/ui/button";
 import { usePageSeo } from "@/lib/seo";
 
 const metrics = [
   { label: "支持平台", value: "腾讯云 CDN / 七牛云 CDN" },
   { label: "验证方式", value: "HTTP-01 / DNS-01" },
-  { label: "安全能力", value: "AES-256-GCM 加密存储" },
-  { label: "可视化", value: "续签、部署、历史统一回看" }
+  { label: "自动化", value: "续签、部署、历史统一回看" },
+  { label: "安全能力", value: "AES-256-GCM 加密存储" }
 ];
 
-const capabilityRows = [
+const features = [
   {
-    title: "把证书、验证、部署放进一条连续工作流",
+    title: "统一管理 CDN SSL 生命周期",
     description:
-      "接入平台凭据、设置域名验证、自动续签和自动部署都放在同一个系统里，不再依赖零散脚本和临时手工流程。",
+      "把站点、证书状态、验证方式、部署动作和历史记录放进同一个系统，不再依赖多处平台和临时脚本拼接流程。",
     icon: GlobeHemisphereWest
   },
   {
-    title: "把到期风险提前暴露出来，而不是靠记忆管理",
+    title: "自动续签后继续自动部署",
     description:
-      "你能在一个视图里看到证书到期窗口、CDN HTTPS 状态、最近动作和失败原因，问题会更早被发现。",
+      "证书到期前触发续签，续签成功后继续下发到 CDN 平台，减少人工介入和漏操作的风险。",
+    icon: Certificate
+  },
+  {
+    title: "优先暴露真正需要关注的风险",
+    description:
+      "后台会把临近到期站点、最近动作和失败原因提到前面，方便团队先处理对线上影响最大的事项。",
     icon: ClockCountdown
   },
   {
-    title: "把凭据和证书放进更可控的后台",
+    title: "让凭据和证书处于更可控的环境",
     description:
-      "敏感数据加密存储，后台保留续签和部署记录，方便团队在日常维护和排障时保持统一上下文。",
+      "敏感数据加密保存，验证和部署动作保留记录，团队在维护和排障时能共享同一上下文。",
     icon: Lock
+  }
+];
+
+const scenarios = [
+  {
+    title: "多个 CDN 域名需要持续续签",
+    description:
+      "适合同时维护多条 CDN 域名、又不想手工检查每一张证书的团队。"
+  },
+  {
+    title: "证书续签和部署分散在不同系统",
+    description:
+      "把站点、凭据、验证、部署和历史收进一个控制台，减少信息切换。"
+  },
+  {
+    title: "需要保留可回溯的执行记录",
+    description:
+      "续签和部署动作统一记录，方便排查失败原因和确认触发来源。"
+  }
+];
+
+const workflow = [
+  {
+    title: "接入 CDN 与 DNS 凭据",
+    description:
+      "接入腾讯云或七牛云凭据后，系统可以同步站点，并为 DNS-01 准备复用能力。"
+  },
+  {
+    title: "按顶级域名配置验证策略",
+    description:
+      "对 apex domain 统一设置 HTTP-01 或 DNS-01，新增站点时不需要重复配置同一套挑战逻辑。"
+  },
+  {
+    title: "在后台持续运行续签与部署",
+    description:
+      "当站点接近到期窗口时，系统自动触发续签，并根据策略继续部署到 CDN 平台。"
   }
 ];
 
@@ -45,37 +87,26 @@ const faqItems = [
   {
     question: "适合什么样的团队？",
     answer:
-      "更适合同时维护多个 CDN 域名、需要稳定续签流程，又不想把证书管理分散到多个平台和脚本里的团队。"
+      "更适合维护多个 CDN 域名、希望把续签和部署动作放进同一个控制台里的团队。"
   },
   {
     question: "支持哪些平台和验证方式？",
     answer:
-      "当前支持腾讯云 CDN、七牛云 CDN，以及 HTTP-01、DNS-01 两类验证路径，DNS-01 可以复用腾讯云凭据。"
+      "当前支持腾讯云 CDN、七牛云 CDN，以及 HTTP-01、DNS-01 两类验证方式，DNS-01 可复用腾讯云凭据。"
   },
   {
-    question: "这次改版除了视觉还有什么变化？",
+    question: "系统能解决什么核心问题？",
     answer:
-      "Landing、登录注册、后台骨架和 SEO 元信息都统一到了同一套系统里，后续继续调整风格也能从全局设计令牌入手。"
+      "核心是把证书续签、部署、历史记录和风险识别统一起来，减少人工巡检和遗漏。"
   }
 ];
 
-const previewRows = [
-  {
-    domain: "media.example.com",
-    expiry: "27 天",
-    status: "稳定"
-  },
-  {
-    domain: "static.example.com",
-    expiry: "11 天",
-    status: "关注"
-  },
-  {
-    domain: "img.example.com",
-    expiry: "44 天",
-    status: "稳定"
-  }
-];
+const reveal = {
+  initial: { opacity: 0, y: 28 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.18 },
+  transition: { duration: 0.55, ease: "easeOut" }
+} as const;
 
 export function LandingPage() {
   usePageSeo({
@@ -103,7 +134,13 @@ export function LandingPage() {
         operatingSystem: "Web",
         url: "https://auto-cdn-ssl.littleor.cn/",
         description:
-          "统一管理 CDN SSL 证书续签、域名验证、凭据同步与自动部署的 Web 控制台。"
+          "统一管理 CDN SSL 证书续签、域名验证、凭据同步与自动部署的 Web 控制台。",
+        featureList: [
+          "腾讯云 CDN 与七牛云 CDN",
+          "HTTP-01 与 DNS-01 验证",
+          "自动续签与自动部署",
+          "续签与部署历史记录"
+        ]
       },
       {
         "@context": "https://schema.org",
@@ -141,18 +178,23 @@ export function LandingPage() {
         </header>
 
         <main className="space-y-8 pt-8 md:space-y-10">
-          <section className="grid min-h-[calc(100dvh-8rem)] gap-6 lg:grid-cols-[0.96fr_1.04fr] lg:items-center">
-            <div className="space-y-6">
+          <section className="grid gap-8 py-6 lg:min-h-[72dvh] lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -28 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="space-y-6"
+            >
               <div className="inline-flex items-center rounded-full border border-white/75 bg-white/72 px-3 py-1 text-[0.7rem] font-medium tracking-[0.16em] text-muted-foreground">
-                CDN SSL Control
+                CDN SSL Platform
               </div>
               <div className="space-y-4">
                 <h1 className="max-w-3xl text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.06em] text-foreground md:text-[4.6rem]">
-                  自动管理 CDN SSL，而不是反复人工确认
+                  统一续签、验证和部署你的 CDN SSL
                 </h1>
-                <p className="max-w-[58ch] text-base leading-8 text-muted-foreground md:text-[17px]">
-                  Auto CDN SSL 把续签、验证、部署和历史记录集中到一套简洁的后台里，
-                  让腾讯云与七牛云 CDN 的 HTTPS 运维变得更连续，也更容易长期维护。
+                <p className="max-w-[60ch] text-base leading-8 text-muted-foreground md:text-[17px]">
+                  Auto CDN SSL 面向 CDN 场景设计，把证书续签、域名验证、部署动作和历史记录集中到一套后台里，
+                  让 HTTPS 运维从人工巡检转成可持续运行的系统流程。
                 </p>
               </div>
 
@@ -164,7 +206,7 @@ export function LandingPage() {
                   </Link>
                 </Button>
                 <Button variant="outline" size="lg" asChild>
-                  <Link to="/login">已有账号，直接登录</Link>
+                  <Link to="/login">进入控制台</Link>
                 </Button>
               </div>
 
@@ -173,81 +215,12 @@ export function LandingPage() {
                 <span className="rounded-full border border-white/75 bg-white/60 px-3 py-1.5">支持七牛云 CDN</span>
                 <span className="rounded-full border border-white/75 bg-white/60 px-3 py-1.5">支持 HTTP-01 / DNS-01</span>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="surface p-4 md:p-5">
-              <div className="rounded-[1.6rem] border border-white/70 bg-white/72 p-4 md:p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="section-label">System Preview</div>
-                    <div className="mt-1 text-base font-semibold tracking-[-0.03em] text-foreground">
-                      证书与部署概览
-                    </div>
-                  </div>
-                  <div className="rounded-full border border-primary/12 bg-primary/10 px-3 py-1 text-[0.7rem] font-medium text-primary">
-                    Auto Renew
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-                  <div className="rounded-[1.4rem] border border-border/65 bg-white/78 p-4">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>即将到期站点</span>
-                      <span>3 个需要关注</span>
-                    </div>
-                    <div className="mt-4 divide-y divide-border/60">
-                      {previewRows.map((row) => (
-                        <div key={row.domain} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                          <div>
-                            <div className="text-sm font-medium tracking-tight text-foreground">
-                              {row.domain}
-                            </div>
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              证书剩余 {row.expiry}
-                            </div>
-                          </div>
-                          <div className="rounded-full border border-white/75 bg-white/72 px-2.5 py-1 text-[0.68rem] text-muted-foreground">
-                            {row.status}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="rounded-[1.4rem] border border-border/65 bg-white/78 p-4">
-                      <div className="section-label">Deployment</div>
-                      <div className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-foreground">
-                        14
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                        最近 7 天的续签与部署动作
-                      </p>
-                    </div>
-                    <div className="rounded-[1.4rem] border border-border/65 bg-white/78 p-4">
-                      <div className="section-label">Validation</div>
-                      <div className="mt-3 space-y-3">
-                        <div className="flex items-center gap-3">
-                          <ShieldCheck className="h-4 w-4 text-primary" weight="fill" />
-                          <span className="text-sm text-foreground">按顶级域名统一配置挑战方式</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Database className="h-4 w-4 text-primary" weight="duotone" />
-                          <span className="text-sm text-foreground">DNS-01 可复用腾讯云凭据</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Cloud className="h-4 w-4 text-primary" weight="duotone" />
-                          <span className="text-sm text-foreground">续签完成后继续自动部署</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <LandingShowcase />
           </section>
 
-          <section className="surface overflow-hidden p-0">
+          <motion.section {...reveal} className="surface overflow-hidden p-0">
             <div className="grid divide-y divide-border/60 md:grid-cols-2 md:divide-y-0 xl:grid-cols-4 xl:divide-x">
               {metrics.map((item) => (
                 <div key={item.label} className="px-5 py-4 md:px-6">
@@ -258,22 +231,22 @@ export function LandingPage() {
                 </div>
               ))}
             </div>
-          </section>
+          </motion.section>
 
-          <section className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
+          <motion.section {...reveal} className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
             <div className="space-y-4">
-              <div className="section-label">Why It Feels Better</div>
+              <div className="section-label">核心能力</div>
               <h2 className="max-w-2xl text-[2rem] font-semibold leading-[1.08] tracking-[-0.055em] text-foreground md:text-[3rem]">
-                用更少的视觉动作，承载更清晰的产品信息
+                为 CDN SSL 运维准备一套真正能长期使用的后台
               </h2>
-              <p className="max-w-[56ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
-                这次不是继续叠营销块，而是把首页收成更克制的产品页结构。信息顺序更直接，视觉噪音更少，也更符合 Apple 风格那种轻、透、整洁的系统感。
+              <p className="max-w-[58ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
+                这套系统把日常证书维护里最耗时、最容易遗漏的部分收进稳定流程，减少人工确认和平台切换。
               </p>
             </div>
 
             <div className="surface overflow-hidden p-0">
               <div className="divide-y divide-border/60">
-                {capabilityRows.map((item) => {
+                {features.map((item) => {
                   const Icon = item.icon;
                   return (
                     <article key={item.title} className="flex gap-4 px-5 py-5 md:px-6">
@@ -293,121 +266,102 @@ export function LandingPage() {
                 })}
               </div>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="grid gap-6 lg:grid-cols-[1.06fr_0.94fr] lg:items-start">
+          <motion.section {...reveal} className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
             <div className="surface p-5 md:p-6">
-              <div className="section-label">System Management</div>
-              <div className="mt-4 rounded-[1.6rem] border border-border/65 bg-white/76 p-4">
-                <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                  <div>
-                    <div className="text-sm font-medium tracking-tight text-foreground">
-                      系统管理界面
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      更像长期使用的工具，而不是临时拼装的后台
-                    </div>
+              <div className="section-label">适用场景</div>
+              <div className="mt-4 space-y-4">
+                {scenarios.map((item) => (
+                  <div key={item.title} className="line-panel px-5 py-5">
+                    <h3 className="text-base font-semibold tracking-[-0.03em] text-foreground">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                      {item.description}
+                    </p>
                   </div>
-                  <Certificate className="h-5 w-5 text-primary" weight="duotone" />
-                </div>
-                <div className="mt-4 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-                  <div className="rounded-[1.3rem] border border-border/65 bg-white/74 p-3">
-                    <div className="space-y-2">
-                      <div className="rounded-[1rem] bg-primary/10 px-3 py-2 text-sm text-primary">
-                        概览
-                      </div>
-                      <div className="rounded-[1rem] px-3 py-2 text-sm text-muted-foreground">
-                        CDN 站点
-                      </div>
-                      <div className="rounded-[1rem] px-3 py-2 text-sm text-muted-foreground">
-                        续签设置
-                      </div>
-                      <div className="rounded-[1rem] px-3 py-2 text-sm text-muted-foreground">
-                        历史记录
-                      </div>
-                    </div>
-                  </div>
-                  <div className="rounded-[1.3rem] border border-border/65 bg-white/74 p-4">
-                    <div className="grid gap-3 md:grid-cols-3">
-                      <div className="line-panel px-4 py-4">
-                        <div className="section-label">Sites</div>
-                        <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">32</div>
-                      </div>
-                      <div className="line-panel px-4 py-4">
-                        <div className="section-label">Expiring</div>
-                        <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">5</div>
-                      </div>
-                      <div className="line-panel px-4 py-4">
-                        <div className="section-label">Providers</div>
-                        <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">4</div>
-                      </div>
-                    </div>
-                    <div className="mt-4 divide-y divide-border/60 rounded-[1.3rem] border border-border/65 bg-white/72 px-4">
-                      <div className="flex items-center justify-between py-3">
-                        <span className="text-sm text-foreground">cdn.example.com</span>
-                        <span className="text-xs text-muted-foreground">剩余 27 天</span>
-                      </div>
-                      <div className="flex items-center justify-between py-3">
-                        <span className="text-sm text-foreground">img.example.com</span>
-                        <span className="text-xs text-muted-foreground">剩余 44 天</span>
-                      </div>
-                      <div className="flex items-center justify-between py-3">
-                        <span className="text-sm text-foreground">static.example.com</span>
-                        <span className="text-xs text-muted-foreground">剩余 11 天</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
+            </div>
+
+            <div className="surface p-5 md:p-6">
+              <div className="section-label">工作流程</div>
+              <div className="mt-4 divide-y divide-border/60 rounded-[1.6rem] border border-border/65 bg-white/70">
+                {workflow.map((item, index) => (
+                  <div key={item.title} className="grid gap-3 px-5 py-5 md:grid-cols-[auto_1fr]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/75 bg-white/80 text-sm font-medium text-primary">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold tracking-[-0.03em] text-foreground">
+                        {item.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+
+          <motion.section {...reveal} className="grid gap-6 lg:grid-cols-[1.06fr_0.94fr] lg:items-start">
+            <div className="surface p-5 md:p-6">
+              <div className="section-label">为什么团队会继续使用</div>
+              <h2 className="mt-3 max-w-2xl text-[1.9rem] font-semibold leading-[1.08] tracking-[-0.05em] text-foreground md:text-[2.8rem]">
+                当域名和环境越来越多时，证书维护需要的是系统，不是记忆
+              </h2>
+              <p className="mt-4 max-w-[60ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
+                平台凭据、验证策略、续签动作和部署结果都汇总在一套工作台里，团队不需要反复切换平台确认每一个环节。
+              </p>
             </div>
 
             <div className="space-y-4">
-              <div className="section-label">Three Core Panels</div>
-              <div className="space-y-4">
-                <div className="line-panel px-5 py-5">
-                  <div className="flex items-start gap-3">
-                    <ClockCountdown className="mt-1 h-5 w-5 text-primary" weight="duotone" />
-                    <div>
-                      <div className="text-base font-semibold tracking-[-0.03em] text-foreground">
-                        概览页优先告诉你哪里有风险
-                      </div>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        到期窗口、最近动作和风险数量被提到最前面，不再被装饰性的统计块稀释。
-                      </p>
+              <div className="line-panel px-5 py-5">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-1 h-5 w-5 text-primary" weight="duotone" />
+                  <div>
+                    <div className="text-base font-semibold tracking-[-0.03em] text-foreground">
+                      统一的验证与部署上下文
                     </div>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                      不同平台、不同验证方式和不同站点状态可以在一个系统里连续查看和处理。
+                    </p>
                   </div>
                 </div>
-                <div className="line-panel px-5 py-5">
-                  <div className="flex items-start gap-3">
-                    <Cloud className="mt-1 h-5 w-5 text-primary" weight="duotone" />
-                    <div>
-                      <div className="text-base font-semibold tracking-[-0.03em] text-foreground">
-                        凭据、站点、部署保持统一语义
-                      </div>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        不是每一页都换一种风格，而是尽量依赖同一套设计令牌和同一类容器。
-                      </p>
+              </div>
+              <div className="line-panel px-5 py-5">
+                <div className="flex items-start gap-3">
+                  <ClockCountdown className="mt-1 h-5 w-5 text-primary" weight="duotone" />
+                  <div>
+                    <div className="text-base font-semibold tracking-[-0.03em] text-foreground">
+                      风险优先级更清楚
                     </div>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                      临近到期站点、最近动作和失败原因会优先出现在后台前排，降低遗漏风险。
+                    </p>
                   </div>
                 </div>
-                <div className="line-panel px-5 py-5">
-                  <div className="flex items-start gap-3">
-                    <Database className="mt-1 h-5 w-5 text-primary" weight="duotone" />
-                    <div>
-                      <div className="text-base font-semibold tracking-[-0.03em] text-foreground">
-                        SEO 和视觉风格都可从全局继续调整
-                      </div>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        配色、字体、表面材质和按钮语义都回到了全局样式层，不需要再一页页单独修。
-                      </p>
+              </div>
+              <div className="line-panel px-5 py-5">
+                <div className="flex items-start gap-3">
+                  <Lock className="mt-1 h-5 w-5 text-primary" weight="duotone" />
+                  <div>
+                    <div className="text-base font-semibold tracking-[-0.03em] text-foreground">
+                      凭据和证书更容易控管
                     </div>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                      敏感数据加密保存，历史动作统一留痕，方便团队协作和问题回溯。
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="surface overflow-hidden p-0">
+          <motion.section {...reveal} className="surface overflow-hidden p-0">
             <div className="divide-y divide-border/60">
               {faqItems.map((item) => (
                 <article key={item.question} className="px-5 py-5 md:px-6">
@@ -420,17 +374,17 @@ export function LandingPage() {
                 </article>
               ))}
             </div>
-          </section>
+          </motion.section>
 
-          <section className="surface px-5 py-6 md:px-6 md:py-7">
+          <motion.section {...reveal} className="surface px-5 py-6 md:px-6 md:py-7">
             <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
               <div>
-                <div className="section-label">Ready To Continue</div>
+                <div className="section-label">开始使用</div>
                 <h2 className="mt-2 max-w-3xl text-[1.9rem] font-semibold leading-[1.08] tracking-[-0.05em] text-foreground md:text-[2.8rem]">
-                  这一版先把方向拉回到简洁、克制、可长期维护
+                  把 CDN SSL 续签、验证和部署收进一套更稳定的工作流
                 </h2>
                 <p className="mt-3 max-w-[60ch] text-sm leading-7 text-muted-foreground">
-                  公开页、登录注册和系统管理骨架都已经回到同一套极简系统里，后续继续微调会容易得多。
+                  如果你正在维护多个 CDN 域名，这套系统会比反复人工确认更稳，也更适合长期使用。
                 </p>
               </div>
               <div className="flex flex-wrap gap-3 lg:justify-end">
@@ -445,7 +399,7 @@ export function LandingPage() {
                 </Button>
               </div>
             </div>
-          </section>
+          </motion.section>
         </main>
       </div>
     </div>

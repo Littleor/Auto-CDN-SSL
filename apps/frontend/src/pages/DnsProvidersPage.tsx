@@ -93,21 +93,8 @@ export function DnsProvidersPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="DNS Credentials"
-        title="把 DNS-01 需要的凭据单独管理，同时允许复用腾讯云 CDN 凭据"
-        description="DNS 凭据页也统一到了新的布局，重点信息变得更清楚，复用关系也不会再埋在说明文字里。"
-        stats={[
-          {
-            label: "独立 DNS",
-            value: String(dnsProviders.length),
-            hint: "专门为 DNS-01 创建的凭据"
-          },
-          {
-            label: "可复用 CDN",
-            value: String(reusableCdnProviders.length),
-            hint: "可直接用于 DNS-01 的腾讯云 CDN 凭据"
-          }
-        ]}
+        title="DNS 凭据"
+        description="管理 DNS-01 验证凭据，并支持复用腾讯云 CDN 凭据。"
         action={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -170,7 +157,6 @@ export function DnsProvidersPage() {
           <Card key={`${provider.source}-${provider.id}`} className="p-1">
             <CardHeader className="flex-row items-center justify-between">
               <div>
-                <div className="section-label">Credential</div>
                 <CardTitle className="text-base">{provider.name}</CardTitle>
                 <p className="text-xs text-muted-foreground">
                   {provider.source === "dns" ? "腾讯云 DNS" : "腾讯云 CDN"}

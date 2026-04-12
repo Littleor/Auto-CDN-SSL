@@ -121,31 +121,8 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Overview"
-        title="把风险、续签窗口和最近动作放进一个更安静的首页"
-        description="概览页现在优先展示真正需要先看到的信息，不再用过多装饰块分散注意力。"
-        stats={[
-          {
-            label: "管理站点",
-            value: String(sites.length),
-            hint: "已纳入控制台的 CDN 域名"
-          },
-          {
-            label: "30 天风险",
-            value: String(expiringSites.length),
-            hint: "近期需要重点确认的站点"
-          },
-          {
-            label: "平台凭据",
-            value: String(providers),
-            hint: "可用于同步与部署的平台凭据"
-          },
-          {
-            label: "动作历史",
-            value: String(deployments.length),
-            hint: "已记录的续签与部署动作"
-          }
-        ]}
+        title="概览"
+        description="查看近期风险、续签窗口和最近动作。"
       />
 
       {loading ? (
@@ -182,8 +159,7 @@ export function DashboardPage() {
           <section className="surface overflow-hidden p-0">
             <div className="flex items-center justify-between border-b border-border/60 px-5 py-4 md:px-6">
               <div>
-                <div className="section-label">Renewal Window</div>
-                <h2 className="mt-1 text-[1.1rem] font-semibold tracking-[-0.03em] text-foreground">
+                <h2 className="text-[1.1rem] font-semibold tracking-[-0.03em] text-foreground">
                   下一批续签站点
                 </h2>
               </div>
@@ -246,8 +222,7 @@ export function DashboardPage() {
             <section className="surface overflow-hidden p-0">
               <div className="flex items-center justify-between border-b border-border/60 px-5 py-4 md:px-6">
                 <div>
-                  <div className="section-label">Risk Snapshot</div>
-                  <h2 className="mt-1 text-[1.1rem] font-semibold tracking-[-0.03em] text-foreground">
+                  <h2 className="text-[1.1rem] font-semibold tracking-[-0.03em] text-foreground">
                     当前风险面
                   </h2>
                 </div>
@@ -299,8 +274,7 @@ export function DashboardPage() {
             <section className="surface overflow-hidden p-0">
               <div className="flex items-center justify-between border-b border-border/60 px-5 py-4 md:px-6">
                 <div>
-                  <div className="section-label">Operation Feed</div>
-                  <h2 className="mt-1 text-[1.1rem] font-semibold tracking-[-0.03em] text-foreground">
+                  <h2 className="text-[1.1rem] font-semibold tracking-[-0.03em] text-foreground">
                     最近动作
                   </h2>
                 </div>

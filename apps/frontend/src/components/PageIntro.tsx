@@ -8,16 +8,14 @@ type IntroStat = {
 };
 
 type PageIntroProps = {
-  eyebrow?: string;
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
   stats?: IntroStat[];
   className?: string;
 };
 
 export function PageIntro({
-  eyebrow,
   title,
   description,
   action,
@@ -25,22 +23,17 @@ export function PageIntro({
   className
 }: PageIntroProps) {
   return (
-    <section className={cn("space-y-5", className)}>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div className="space-y-2.5">
-          {eyebrow && (
-            <p className="section-label">
-              {eyebrow}
-            </p>
-          )}
-          <div className="space-y-2.5">
-            <h1 className="max-w-3xl text-[2rem] font-semibold leading-[1.05] tracking-[-0.055em] text-foreground md:text-[3.1rem]">
-              {title}
-            </h1>
-            <p className="max-w-[62ch] text-sm leading-7 text-muted-foreground md:text-[15px]">
+    <section className={cn("space-y-4", className)}>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="space-y-2">
+          <h1 className="max-w-3xl text-[1.9rem] font-semibold leading-[1.06] tracking-[-0.05em] text-foreground md:text-[2.6rem]">
+            {title}
+          </h1>
+          {description ? (
+            <p className="max-w-[60ch] text-sm leading-7 text-muted-foreground">
               {description}
             </p>
-          </div>
+          ) : null}
         </div>
         {action && (
           <div className="flex flex-wrap items-center gap-3 lg:justify-end">
@@ -50,22 +43,21 @@ export function PageIntro({
       </div>
 
       {stats && stats.length > 0 && (
-        <div className="surface overflow-hidden p-0">
-          <div className="grid divide-y divide-border/60 md:grid-cols-2 md:divide-y-0 xl:grid-cols-4 xl:divide-x">
+        <div className="flex flex-wrap gap-2">
             {stats.map((item) => (
-              <div key={item.label} className="px-5 py-4 md:px-6">
-                <div className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              <div
+                key={item.label}
+                className="rounded-full border border-white/75 bg-white/72 px-3 py-2"
+              >
+                <div className="text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {item.label}
                 </div>
-                <div className="mt-2 text-[1.45rem] font-semibold tracking-[-0.05em] text-foreground">
+                <div className="mt-1 text-sm font-medium tracking-tight text-foreground">
                   {item.value}
                 </div>
-                {item.hint && (
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.hint}</p>
-                )}
+                {item.hint ? <p className="mt-1 text-[11px] text-muted-foreground">{item.hint}</p> : null}
               </div>
             ))}
-          </div>
         </div>
       )}
     </section>

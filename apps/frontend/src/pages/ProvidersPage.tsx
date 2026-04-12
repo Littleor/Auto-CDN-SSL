@@ -101,21 +101,8 @@ export function ProvidersPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="CDN Credentials"
-        title="统一维护 CDN 平台凭据，站点同步和证书部署才能形成闭环"
-        description="凭据列表也重新收紧了信息层级，新增、同步和删除动作都被收进更清楚的管理界面里。"
-        stats={[
-          {
-            label: "凭据总数",
-            value: String(providers.length),
-            hint: "当前已保存的 CDN 平台凭据"
-          },
-          {
-            label: "平台范围",
-            value: "2",
-            hint: "腾讯云 CDN 与七牛云 CDN"
-          }
-        ]}
+        title="CDN 凭据"
+        description="管理用于同步站点和部署证书的平台凭据。"
         action={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -214,7 +201,6 @@ export function ProvidersPage() {
           <Card key={provider.id} className="p-1">
             <CardHeader className="flex-row items-center justify-between">
               <div>
-                <div className="section-label">Credential</div>
                 <CardTitle className="text-base">{provider.name}</CardTitle>
                 <p className="text-xs text-muted-foreground">
                   {providerLabels[provider.providerType] ?? provider.providerType}

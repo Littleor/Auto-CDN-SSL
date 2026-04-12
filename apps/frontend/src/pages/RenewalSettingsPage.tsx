@@ -66,29 +66,12 @@ export function RenewalSettingsPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Renewal Policy"
-        title="把调度时间、提前续签阈值和自动部署策略收进一套统一配置"
-        description="续签策略页现在更强调策略本身，而不是零散输入框。每天什么时候跑、提前多久开始续签、是否自动部署，都在这里集中维护。"
-        stats={[
-          {
-            label: "每日调度",
-            value:
-              settings === null
-                ? "--:--"
-                : formatTimeValue(settings.renewalHour, settings.renewalMinute),
-            hint: "控制台每天执行自动续签的时间"
-          },
-          {
-            label: "提前天数",
-            value: settings === null ? "--" : `${settings.renewalThresholdDays}`,
-            hint: "证书距离到期多少天开始续签"
-          }
-        ]}
+        title="续签设置"
+        description="管理调度时间、提前续签阈值和自动部署。"
       />
 
       <Card className="p-1">
         <CardHeader>
-          <div className="section-label">Policy Settings</div>
           <CardTitle>续签策略</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

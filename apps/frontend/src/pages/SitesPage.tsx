@@ -364,31 +364,8 @@ export function SitesPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Sites & Certificates"
-        title="把 CDN 站点、证书状态和部署动作放在一张表里处理"
-        description="这个页面现在更像一个长期使用的运维工作台：筛选、排序、批量续签和动作反馈都被拉到了同一视觉体系下。"
-        stats={[
-          {
-            label: "站点数量",
-            value: String(sites.length),
-            hint: "已接入控制台的 CDN 域名"
-          },
-          {
-            label: "已绑定平台",
-            value: String(decoratedSites.filter((site) => Boolean(site.providerType)).length),
-            hint: "已关联腾讯云或七牛云凭据"
-          },
-          {
-            label: "30 天风险",
-            value: String(decoratedSites.filter((site) => site.days !== null && site.days <= 30).length),
-            hint: "近期需要重点确认的证书"
-          },
-          {
-            label: "筛选结果",
-            value: String(filteredSites.length),
-            hint: "当前过滤条件下的站点数量"
-          }
-        ]}
+        title="CDN 站点"
+        description="管理站点、证书状态和部署动作。"
         action={
           <>
             <Button variant="secondary" onClick={handleIssueAll} disabled={issuingAll || filteredSites.length === 0}>
@@ -477,8 +454,7 @@ export function SitesPage() {
 
       <Card className="p-1">
         <CardHeader>
-          <div className="section-label">Certificate Inventory</div>
-          <CardTitle className="mt-3">CDN 站点列表</CardTitle>
+          <CardTitle>站点列表</CardTitle>
           <p className="text-sm text-muted-foreground">HTTPS 配置表示 CDN 平台侧该域名当前是否已启用 HTTPS。</p>
         </CardHeader>
         <CardContent className="space-y-4">

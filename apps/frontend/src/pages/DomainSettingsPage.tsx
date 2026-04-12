@@ -78,21 +78,8 @@ export function DomainSettingsPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Domain Validation"
-        title="按顶级域名维护挑战方式，避免每个站点重复做同样的配置"
-        description="这个页面现在更强调策略本身：哪些域名继承默认配置，哪些域名已经单独指定 HTTP-01 或 DNS-01，一眼就能看清。"
-        stats={[
-          {
-            label: "域名数量",
-            value: String(settings.length),
-            hint: "当前已纳入验证策略的顶级域名"
-          },
-          {
-            label: "DNS 凭据",
-            value: String(dnsOptions.length),
-            hint: "可用于 DNS-01 的腾讯云凭据"
-          }
-        ]}
+        title="域名验证"
+        description="按顶级域名维护 HTTP-01 和 DNS-01 策略。"
       />
 
       <Card className="p-1">
@@ -110,7 +97,6 @@ export function DomainSettingsPage() {
       ) : (
         <Card className="p-1">
           <CardHeader>
-            <div className="section-label">Validation Matrix</div>
             <CardTitle>顶级域名配置</CardTitle>
           </CardHeader>
           <CardContent>

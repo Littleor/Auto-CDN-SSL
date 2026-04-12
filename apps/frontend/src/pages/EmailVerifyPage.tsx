@@ -48,12 +48,11 @@ export function EmailVerifyPage() {
             <div>
               <BrandMark />
               <div className="mt-10 max-w-2xl">
-                <div className="section-label">Email Verification</div>
-                <h1 className="mt-3 text-[2rem] font-semibold leading-[1.06] tracking-[-0.055em] text-foreground md:text-[3rem]">
+                <h1 className="text-[2rem] font-semibold leading-[1.06] tracking-[-0.055em] text-foreground md:text-[3rem]">
                   完成邮箱验证后，就可以进入新的系统管理界面
                 </h1>
                 <p className="mt-4 text-sm leading-8 text-muted-foreground md:text-[15px]">
-                  这个页面同样已经收进同一套极简系统里，并设置为不参与搜索索引，避免把 SEO 权重分散到工具型页面。
+                  验证通过后即可登录控制台，继续管理站点、凭据、验证策略与部署动作。
                 </p>
               </div>
             </div>
@@ -65,8 +64,7 @@ export function EmailVerifyPage() {
           </section>
 
           <section className="surface p-5 md:p-6">
-            <div className="section-label">Verification State</div>
-            <h2 className="mt-2 text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
+            <h2 className="text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
               邮箱验证状态
             </h2>
 

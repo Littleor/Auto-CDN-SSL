@@ -1,245 +1,194 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import {
   ArrowsClockwise,
-  Certificate,
   ClockCountdown,
-  ShieldCheck,
-  Sparkle
+  Cloud,
+  ShieldCheck
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "framer-motion";
 
-const prompts = [
-  "为 media.example.com 自动续签并部署到腾讯云 CDN",
-  "检测 qiniu 生产环境凭据与证书到期窗口",
-  "为所有 14 天内到期站点生成续签计划"
+const siteRows = [
+  { id: "media", domain: "media.example.com", expiry: "27 天", status: "稳定" },
+  { id: "static", domain: "static.example.com", expiry: "11 天", status: "关注" },
+  { id: "img", domain: "img.example.com", expiry: "44 天", status: "稳定" }
 ];
 
-const workflowItems = [
-  { id: "01", name: "media.example.com", status: "待部署", detail: "证书已签发，正在等待 CDN 下发" },
-  { id: "02", name: "static.example.com", status: "验证中", detail: "DNS-01 记录已写入，等待校验回执" },
-  { id: "03", name: "img.example.com", status: "稳定", detail: "HTTPS 与 CDN 证书到期时间保持一致" }
+const activityNotes = [
+  "自动续签任务已开始扫描",
+  "检测到 3 个站点接近续签窗口",
+  "DNS-01 验证准备就绪"
 ];
 
-const tickerItems = [
+const capabilityTags = [
   "腾讯云 CDN",
   "七牛云 CDN",
-  "Let's Encrypt",
-  "DNS-01",
   "HTTP-01",
+  "DNS-01",
   "自动部署",
-  "到期监控",
-  "凭据加密"
+  "历史记录"
 ];
 
-function spring(index: number) {
-  return {
-    delay: index * 0.08,
-    type: "spring",
-    stiffness: 100,
-    damping: 20
-  } as const;
-}
-
 export const LandingShowcase = memo(function LandingShowcase() {
-  const [promptIndex, setPromptIndex] = useState(0);
-  const [typedLength, setTypedLength] = useState(0);
-  const [queueIndex, setQueueIndex] = useState(0);
-  const [notificationVisible, setNotificationVisible] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    const current = prompts[promptIndex];
-    const typingTimer = window.setInterval(() => {
-      setTypedLength((value) => {
-        if (value >= current.length) {
-          window.clearInterval(typingTimer);
-          window.setTimeout(() => {
-            setTypedLength(0);
-            setPromptIndex((index) => (index + 1) % prompts.length);
-          }, 1800);
-          return value;
-        }
-        return value + 1;
-      });
-    }, 48);
-
-    return () => {
-      window.clearInterval(typingTimer);
-    };
-  }, [promptIndex]);
-
-  useEffect(() => {
-    const queueTimer = window.setInterval(() => {
-      setQueueIndex((value) => (value + 1) % workflowItems.length);
-      setNotificationVisible(false);
-      window.setTimeout(() => setNotificationVisible(true), 420);
+    const timer = window.setInterval(() => {
+      setActiveIndex((value) => (value + 1) % activityNotes.length);
     }, 3200);
 
-    return () => window.clearInterval(queueTimer);
+    return () => window.clearInterval(timer);
   }, []);
 
-  const rotatingItems = useMemo(
-    () =>
-      workflowItems.map((_, index) => workflowItems[(index + queueIndex) % workflowItems.length]),
-    [queueIndex]
-  );
-
-  const currentPrompt = prompts[promptIndex].slice(0, typedLength);
+  const orderedRows = useMemo(() => {
+    return siteRows.map((_, index) => siteRows[(index + activeIndex) % siteRows.length]);
+  }, [activeIndex]);
 
   return (
     <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden: { opacity: 0, y: 24 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          transition: {
-            staggerChildren: 0.08
-          }
-        }
-      }}
-      className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="surface p-4 md:p-5"
     >
-      <motion.div
-        variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } }}
-        className="rounded-[2.4rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,245,240,0.72))] p-6 shadow-[0_40px_90px_-58px_rgba(56,46,35,0.32),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-xl md:p-8"
-      >
+      <div className="rounded-[1.6rem] border border-white/70 bg-white/72 p-4 md:p-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Active Queue
-            </div>
-            <div className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-foreground">
-              证书控制循环
+            <div className="section-label">Product Preview</div>
+            <div className="mt-1 text-base font-semibold tracking-[-0.03em] text-foreground">
+              证书与部署概览
             </div>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/90 text-foreground shadow-[0_16px_36px_-24px_rgba(56,46,35,0.3)]">
-            <Sparkle className="h-5 w-5" weight="fill" />
-          </div>
+          <motion.div
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+            className="rounded-full border border-primary/12 bg-primary/10 px-3 py-1 text-[0.7rem] font-medium text-primary"
+          >
+            Auto Renew
+          </motion.div>
         </div>
 
-        <div className="mt-6 rounded-[1.8rem] border border-border/70 bg-[rgba(249,247,243,0.92)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-          <div className="flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <ArrowsClockwise className="h-4 w-4 animate-spin [animation-duration:6s]" />
-            编排指令
-          </div>
-          <div className="mt-4 rounded-[1.35rem] border border-white/80 bg-white/90 px-4 py-4 font-mono text-[0.82rem] leading-7 text-foreground shadow-[0_14px_30px_-26px_rgba(56,46,35,0.35)]">
-            {currentPrompt}
-            <motion.span
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-              className="ml-1 inline-block h-4 w-[2px] bg-foreground/70 align-middle"
-            />
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-3">
-          {rotatingItems.map((item, index) => (
-            <motion.div
-              key={item.id}
-              layout
-              transition={spring(index)}
-              className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[1.6rem] border border-white/80 bg-white/84 px-4 py-4 shadow-[0_18px_34px_-28px_rgba(56,46,35,0.28)]"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground text-background">
-                <ShieldCheck className="h-5 w-5" weight="bold" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold tracking-tight text-foreground">{item.name}</div>
-                <div className="mt-1 text-xs leading-5 text-muted-foreground">{item.detail}</div>
-              </div>
-              <div className="rounded-full border border-emerald-600/12 bg-emerald-600/8 px-3 py-1 text-[0.72rem] font-semibold tracking-[0.16em] text-emerald-700">
-                {item.status}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      <div className="grid gap-4">
-        <motion.div
-          variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } }}
-          className="rounded-[2.2rem] border border-white/80 bg-white/76 p-6 shadow-[0_36px_70px_-52px_rgba(56,46,35,0.3),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Live Status
-              </div>
-              <div className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-                续签窗口已开启
-              </div>
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+          <motion.div layout className="rounded-[1.4rem] border border-border/65 bg-white/80 p-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>即将到期站点</span>
+              <span>按时间顺序排列</span>
             </div>
-            <motion.div
-              animate={{ scale: [1, 1.08, 1], opacity: [0.55, 1, 0.55] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-              className="h-3.5 w-3.5 rounded-full bg-emerald-600"
-            />
-          </div>
-
-          <AnimatePresence mode="wait">
-            {notificationVisible && (
-              <motion.div
-                key={queueIndex}
-                initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                className="mt-5 rounded-[1.4rem] border border-border/80 bg-[rgba(248,246,242,0.9)] p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/80 bg-white/90">
-                    <ClockCountdown className="h-5 w-5 text-foreground" weight="fill" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold tracking-tight text-foreground">
-                      检测到下一批可续签站点
-                    </div>
-                    <div className="mt-1 text-xs leading-5 text-muted-foreground">
-                      在 03:00 调度窗口前，系统会先完成证书校验，再决定是否自动部署。
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        <motion.div
-          variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } }}
-          className="overflow-hidden rounded-[2.2rem] border border-white/80 bg-white/76 p-6 shadow-[0_36px_70px_-52px_rgba(56,46,35,0.3),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Coverage Stream
-              </div>
-              <div className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-                支持整条 CDN 证书链路
-              </div>
-            </div>
-            <Certificate className="h-5 w-5 text-foreground" weight="duotone" />
-          </div>
-
-          <div className="mt-5 overflow-hidden">
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-              className="flex w-[200%] gap-3"
-            >
-              {[...tickerItems, ...tickerItems].map((item, index) => (
-                <div
-                  key={`${item}-${index}`}
-                  className="flex min-w-fit items-center gap-2 rounded-full border border-white/80 bg-[rgba(249,247,243,0.95)] px-4 py-2 text-xs font-semibold tracking-[0.16em] text-muted-foreground"
+            <div className="mt-4 divide-y divide-border/60">
+              {orderedRows.map((row) => (
+                <motion.div
+                  key={row.id}
+                  layout
+                  transition={{ type: "spring", stiffness: 110, damping: 20 }}
+                  className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                 >
-                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-600/80" />
-                  {item}
-                </div>
+                  <div>
+                    <div className="text-sm font-medium tracking-tight text-foreground">
+                      {row.domain}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      证书剩余 {row.expiry}
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-white/75 bg-white/74 px-2.5 py-1 text-[0.68rem] text-muted-foreground">
+                    {row.status}
+                  </div>
+                </motion.div>
               ))}
-            </motion.div>
+            </div>
+          </motion.div>
+
+          <div className="space-y-4">
+            <div className="rounded-[1.4rem] border border-border/65 bg-white/80 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="section-label">Deployment</div>
+                  <div className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-foreground">
+                    14
+                  </div>
+                </div>
+                <ArrowsClockwise className="h-5 w-5 text-primary" weight="duotone" />
+              </div>
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>自动续签扫描</span>
+                    <span>运行中</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted/80">
+                    <motion.div
+                      className="h-1.5 rounded-full bg-primary"
+                      animate={{ width: ["34%", "78%", "56%"] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>部署队列</span>
+                    <span>等待中</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted/80">
+                    <motion.div
+                      className="h-1.5 rounded-full bg-foreground/80"
+                      animate={{ width: ["20%", "42%", "28%"] }}
+                      transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[1.4rem] border border-border/65 bg-white/80 p-4">
+              <div className="section-label">Activity</div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="mt-3 flex items-start gap-3"
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.08, 1], opacity: [0.55, 1, 0.55] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                    className="mt-1 h-2.5 w-2.5 rounded-full bg-primary"
+                  />
+                  <div className="text-sm leading-7 text-foreground">
+                    {activityNotes[activeIndex]}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              <div className="mt-4 flex items-start gap-3 text-sm text-muted-foreground">
+                <ClockCountdown className="mt-1 h-4 w-4 text-primary" weight="duotone" />
+                后台会优先处理临近到期站点，再决定是否自动部署到 CDN。
+              </div>
+              <div className="mt-3 flex items-start gap-3 text-sm text-muted-foreground">
+                <ShieldCheck className="mt-1 h-4 w-4 text-primary" weight="duotone" />
+                续签、验证和部署动作会统一落到历史记录里。
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
+
+        <div className="mt-4 overflow-hidden">
+          <motion.div
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+            className="flex w-[200%] gap-3"
+          >
+            {[...capabilityTags, ...capabilityTags].map((tag, index) => (
+              <div
+                key={`${tag}-${index}`}
+                className="flex min-w-fit items-center gap-2 rounded-full border border-white/75 bg-white/74 px-3 py-2 text-xs text-muted-foreground"
+              >
+                <Cloud className="h-3.5 w-3.5 text-primary" weight="duotone" />
+                {tag}
+              </div>
+            ))}
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   );
