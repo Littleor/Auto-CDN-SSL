@@ -1,48 +1,48 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F8F4ED"/>
-      <stop offset="1" stop-color="#F1ECE3"/>
+      <stop offset="0" stop-color="#F5F8FC"/>
+      <stop offset="1" stop-color="#EEF3F9"/>
     </linearGradient>
     <linearGradient id="panel" x1="690" y1="120" x2="1030" y2="470" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.98"/>
-      <stop offset="1" stop-color="#F8F5EF" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#F6F8FC" stop-opacity="0.92"/>
     </linearGradient>
     <linearGradient id="accent" x1="145" y1="110" x2="370" y2="350" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#1D7751"/>
-      <stop offset="1" stop-color="#165B3F"/>
+      <stop offset="0" stop-color="#4C9DFF"/>
+      <stop offset="1" stop-color="#2F79E8"/>
     </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
-  <circle cx="1040" cy="118" r="220" fill="#1D7751" fill-opacity="0.08"/>
-  <circle cx="160" cy="540" r="200" fill="#6B543D" fill-opacity="0.08"/>
+  <circle cx="1040" cy="118" r="220" fill="#4C9DFF" fill-opacity="0.09"/>
+  <circle cx="160" cy="540" r="200" fill="#ACC8F7" fill-opacity="0.18"/>
   <rect x="108" y="106" width="240" height="240" rx="64" fill="url(#accent)"/>
-  <path d="M228 152L302 174V252C302 299 274 338 228 366C182 338 154 299 154 252V174L228 152Z" fill="#F8F4ED"/>
-  <rect x="206" y="228" width="44" height="38" rx="9" fill="#165B3F"/>
-  <path d="M210 228V216C210 205.507 218.507 197 229 197C239.493 197 248 205.507 248 216V228" stroke="#F8F4ED" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="228" cy="247" r="6" fill="#F8F4ED"/>
-  <text x="406" y="226" fill="#231D18" font-size="62" font-family="Outfit, Arial, sans-serif" font-weight="700">
+  <path d="M228 152L302 174V252C302 299 274 338 228 366C182 338 154 299 154 252V174L228 152Z" fill="#F5F8FC"/>
+  <rect x="206" y="228" width="44" height="38" rx="9" fill="#2F79E8"/>
+  <path d="M210 228V216C210 205.507 218.507 197 229 197C239.493 197 248 205.507 248 216V228" stroke="#F5F8FC" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="228" cy="247" r="6" fill="#F5F8FC"/>
+  <text x="406" y="226" fill="#1F2937" font-size="62" font-family="SF Pro Display, Helvetica Neue, Arial, sans-serif" font-weight="700">
     Auto CDN SSL
   </text>
-  <text x="406" y="296" fill="#231D18" font-size="32" font-family="Outfit, Arial, sans-serif" font-weight="600">
+  <text x="406" y="296" fill="#1F2937" font-size="32" font-family="SF Pro Display, Helvetica Neue, Arial, sans-serif" font-weight="600">
     CDN SSL 证书自动续签与部署平台
   </text>
-  <text x="406" y="352" fill="#6E6459" font-size="24" font-family="JetBrains Mono, monospace">
+  <text x="406" y="352" fill="#6B7280" font-size="24" font-family="SF Mono, JetBrains Mono, monospace">
     腾讯云 CDN · 七牛云 CDN · DNS-01 · HTTP-01
   </text>
-  <rect x="740" y="122" width="328" height="386" rx="46" fill="url(#panel)" stroke="#E5DDD0"/>
-  <rect x="780" y="166" width="248" height="18" rx="9" fill="#E6DED1"/>
-  <rect x="780" y="206" width="176" height="12" rx="6" fill="#D5CBBE"/>
-  <rect x="780" y="260" width="248" height="82" rx="28" fill="#FFFFFF" stroke="#E8E0D4"/>
-  <circle cx="820" cy="301" r="16" fill="#1D7751" fill-opacity="0.16"/>
-  <circle cx="820" cy="301" r="8" fill="#1D7751"/>
-  <rect x="852" y="284" width="136" height="14" rx="7" fill="#2B241E"/>
-  <rect x="852" y="309" width="104" height="10" rx="5" fill="#887B6E"/>
-  <rect x="780" y="362" width="248" height="82" rx="28" fill="#FFFFFF" stroke="#E8E0D4"/>
-  <rect x="808" y="387" width="118" height="14" rx="7" fill="#2B241E"/>
-  <rect x="808" y="412" width="164" height="10" rx="5" fill="#887B6E"/>
-  <rect x="930" y="386" width="68" height="34" rx="17" fill="#1D7751" fill-opacity="0.12" stroke="#D1E4D8"/>
-  <text x="948" y="408" fill="#165B3F" font-size="14" font-family="Outfit, Arial, sans-serif" font-weight="700">
+  <rect x="740" y="122" width="328" height="386" rx="46" fill="url(#panel)" stroke="#DCE5F1"/>
+  <rect x="780" y="166" width="248" height="18" rx="9" fill="#E2E8F0"/>
+  <rect x="780" y="206" width="176" height="12" rx="6" fill="#CBD5E1"/>
+  <rect x="780" y="260" width="248" height="82" rx="28" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <circle cx="820" cy="301" r="16" fill="#4C9DFF" fill-opacity="0.16"/>
+  <circle cx="820" cy="301" r="8" fill="#2F79E8"/>
+  <rect x="852" y="284" width="136" height="14" rx="7" fill="#1F2937"/>
+  <rect x="852" y="309" width="104" height="10" rx="5" fill="#64748B"/>
+  <rect x="780" y="362" width="248" height="82" rx="28" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect x="808" y="387" width="118" height="14" rx="7" fill="#1F2937"/>
+  <rect x="808" y="412" width="164" height="10" rx="5" fill="#64748B"/>
+  <rect x="930" y="386" width="68" height="34" rx="17" fill="#4C9DFF" fill-opacity="0.12" stroke="#C7DDFB"/>
+  <text x="948" y="408" fill="#2F79E8" font-size="14" font-family="SF Pro Display, Helvetica Neue, Arial, sans-serif" font-weight="700">
     ACTIVE
   </text>
 </svg>

@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    --background: 35 27% 96%;
-    --foreground: 28 18% 14%;
+    --background: 220 30% 97%;
+    --foreground: 220 18% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 28 18% 14%;
-    --primary: 151 42% 33%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 38 16% 90%;
-    --secondary-foreground: 28 18% 14%;
-    --accent: 151 42% 33%;
-    --accent-foreground: 0 0% 98%;
-    --muted: 36 18% 91%;
-    --muted-foreground: 30 10% 38%;
+    --card-foreground: 220 18% 14%;
+    --primary: 211 78% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 22% 93%;
+    --secondary-foreground: 220 18% 14%;
+    --accent: 211 78% 55%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 220 18% 94%;
+    --muted-foreground: 220 10% 43%;
     --destructive: 0 78% 52%;
     --destructive-foreground: 210 40% 98%;
-    --border: 34 16% 83%;
-    --input: 34 16% 83%;
-    --ring: 151 42% 33%;
-    --radius: 22px;
+    --border: 220 16% 87%;
+    --input: 220 16% 87%;
+    --ring: 211 78% 55%;
+    --radius: 28px;
   }
 
   * {
@@ -34,17 +34,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Outfit", system-ui, sans-serif;
+    font-family: "SF Pro Display", "SF Pro Text", "Geist", "Helvetica Neue", sans-serif;
     min-height: 100dvh;
     background-image:
-      radial-gradient(720px 420px at 8% -12%, rgba(19, 106, 72, 0.14), transparent 60%),
-      radial-gradient(880px 460px at 88% -18%, rgba(76, 60, 40, 0.14), transparent 58%),
-      linear-gradient(180deg, rgba(250, 248, 244, 0.98), rgba(244, 240, 233, 0.98)),
-      linear-gradient(90deg, rgba(89, 73, 54, 0.035) 1px, transparent 1px),
-      linear-gradient(0deg, rgba(89, 73, 54, 0.035) 1px, transparent 1px);
-    background-size: auto, auto, auto, 52px 52px, 52px 52px;
-    background-position: center, center, center, -1px -1px, -1px -1px;
-    background-attachment: fixed;
+      radial-gradient(1100px 620px at 0% -12%, rgba(118, 163, 232, 0.16), transparent 56%),
+      radial-gradient(880px 520px at 100% 0%, rgba(255, 255, 255, 0.94), transparent 48%),
+      linear-gradient(180deg, rgba(247, 249, 252, 0.98), rgba(241, 244, 248, 0.98));
+    background-attachment: fixed, fixed, fixed;
   }
 
   body::before {
@@ -52,8 +48,8 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(circle at top, rgba(255, 255, 255, 0.65), transparent 58%);
-    opacity: 0.8;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.52), transparent 38%);
+    opacity: 0.9;
     z-index: -2;
   }
 
@@ -62,9 +58,7 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background-image:
-      radial-gradient(circle at 20% 20%, rgba(18, 111, 75, 0.06), transparent 22%),
-      radial-gradient(circle at 80% 12%, rgba(92, 72, 49, 0.08), transparent 18%);
+    background-image: radial-gradient(circle at 50% -12%, rgba(255, 255, 255, 0.78), transparent 42%);
     z-index: -1;
   }
 
@@ -76,52 +70,52 @@
   h2,
   h3,
   h4 {
-    font-family: "Outfit", system-ui, sans-serif;
+    font-family: "SF Pro Display", "SF Pro Text", "Geist", "Helvetica Neue", sans-serif;
   }
 
   code,
   pre {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
   }
 
   ::selection {
-    background: rgba(25, 118, 81, 0.18);
+    background: rgba(64, 139, 239, 0.18);
     color: hsl(var(--foreground));
   }
 }
 
 @layer components {
   .glass {
-    @apply border border-white/70 backdrop-blur-xl;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 244, 238, 0.68));
+    @apply border border-white/70 backdrop-blur-2xl;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.6));
     box-shadow:
-      0 28px 70px -54px rgba(65, 52, 40, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      0 28px 72px -48px rgba(15, 23, 42, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82);
   }
 
   .surface {
-    @apply rounded-[2rem] border border-white/70 bg-card/80;
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 245, 239, 0.82));
+    @apply rounded-[2rem] border border-white/65 bg-card/70 backdrop-blur-2xl;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.6));
     box-shadow:
-      0 30px 80px -56px rgba(60, 49, 38, 0.34),
-      inset 0 1px 0 rgba(255, 255, 255, 0.92);
+      0 24px 64px -44px rgba(15, 23, 42, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82);
   }
 
   .shadow-glow {
     box-shadow:
-      0 24px 60px -40px rgba(24, 98, 67, 0.24),
-      0 0 0 1px rgba(24, 98, 67, 0.08);
+      0 24px 56px -40px rgba(63, 128, 215, 0.18),
+      0 0 0 1px rgba(63, 128, 215, 0.08);
   }
 
   .line-panel {
-    @apply rounded-[1.75rem] border border-border/70 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] backdrop-blur-xl;
+    @apply rounded-[1.5rem] border border-border/65 bg-white/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl;
   }
 
   .section-label {
-    @apply text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground;
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground;
   }
 
   .skeleton-block {
-    @apply animate-shimmer rounded-2xl bg-[linear-gradient(110deg,rgba(255,255,255,0.65),rgba(242,237,230,0.95),rgba(255,255,255,0.65))] bg-[length:220%_100%];
+    @apply animate-shimmer rounded-[1.5rem] bg-[linear-gradient(110deg,rgba(255,255,255,0.55),rgba(234,239,246,0.95),rgba(255,255,255,0.55))] bg-[length:220%_100%];
   }
 }

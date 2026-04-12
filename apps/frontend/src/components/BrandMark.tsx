@@ -10,13 +10,13 @@ type BrandMarkProps = {
 export function BrandMark({ className, compact = false, labelClassName }: BrandMarkProps) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.35rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,244,238,0.9))] shadow-[0_18px_40px_-28px_rgba(63,53,44,0.35),inset_0_1px_0_rgba(255,255,255,0.9)]">
-        <ShieldCheck className="h-5 w-5 text-foreground" weight="bold" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[1.15rem] border border-white/75 bg-white/72 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.84)] backdrop-blur-xl">
+        <ShieldCheck className="h-4.5 w-4.5 text-primary" weight="bold" />
       </div>
       {!compact && (
         <div className={cn("min-w-0", labelClassName)}>
           <div className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            Certificate Control
+            CDN SSL Control
           </div>
           <div className="text-sm font-semibold tracking-tight text-foreground">Auto CDN SSL</div>
         </div>
@@ -24,4 +24,3 @@ export function BrandMark({ className, compact = false, labelClassName }: BrandM
     </div>
   );
 }
-

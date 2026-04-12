@@ -1,12 +1,17 @@
-import { ArrowRight, Certificate, ClockCountdown, ShieldCheck } from "@phosphor-icons/react";
+import { ArrowRight, ClockCountdown, ShieldCheck } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageSeo } from "@/lib/seo";
+
+const introRows = [
+  "证书状态、部署记录与凭据管理统一放在一个工作台中。",
+  "登录后会直接回到新的系统管理界面。",
+  "整体风格已经切到更克制的极简系统层。"
+];
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -40,35 +45,28 @@ export function LoginPage() {
   return (
     <div className="min-h-[100dvh]">
       <div className="mx-auto max-w-[1360px] px-4 py-4 sm:px-6 sm:py-6">
-        <div className="grid min-h-[calc(100dvh-3rem)] gap-6 lg:grid-cols-[1.04fr_0.96fr]">
-          <section className="surface flex flex-col justify-between p-7 md:p-10">
+        <div className="grid min-h-[calc(100dvh-3rem)] gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <section className="surface flex flex-col justify-between p-7 md:p-8">
             <div>
               <BrandMark />
-              <div className="mt-10 max-w-3xl space-y-5">
+              <div className="mt-10 max-w-3xl">
                 <div className="section-label">Console Access</div>
-                <h1 className="text-4xl font-semibold leading-none tracking-[-0.06em] text-foreground md:text-6xl">
-                  登录后继续处理你的 CDN 证书队列
+                <h1 className="mt-3 max-w-2xl text-[2.2rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground md:text-[3.4rem]">
+                  登录后继续处理你的 CDN 证书工作流
                 </h1>
-                <p className="max-w-[62ch] text-base leading-8 text-muted-foreground">
-                  新版后台把续签状态、部署记录和凭据管理统一到一个界面里，登录后就能直接回到当前工作上下文。
+                <p className="mt-4 max-w-[58ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
+                  后台已经改成更简洁的大面留白和细边框系统，登录后会直接进入新的管理骨架。
                 </p>
               </div>
 
-              <div className="mt-10 grid gap-4 md:grid-cols-3">
-                <div className="line-panel px-4 py-4">
-                  <ShieldCheck className="h-5 w-5 text-foreground" weight="duotone" />
-                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">证书状态集中查看</div>
-                  <div className="mt-1 text-xs leading-5 text-muted-foreground">到期窗口与 HTTPS 状态放在一个视图中。</div>
-                </div>
-                <div className="line-panel px-4 py-4">
-                  <ClockCountdown className="h-5 w-5 text-foreground" weight="duotone" />
-                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">续签策略持续执行</div>
-                  <div className="mt-1 text-xs leading-5 text-muted-foreground">每日调度和提前阈值统一维护。</div>
-                </div>
-                <div className="line-panel px-4 py-4">
-                  <Certificate className="h-5 w-5 text-foreground" weight="duotone" />
-                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">部署动作留痕</div>
-                  <div className="mt-1 text-xs leading-5 text-muted-foreground">失败原因与触发来源可以随时追溯。</div>
+              <div className="mt-8 overflow-hidden rounded-[1.6rem] border border-border/65 bg-white/56">
+                <div className="divide-y divide-border/60">
+                  {introRows.map((row) => (
+                    <div key={row} className="flex items-center gap-3 px-5 py-4">
+                      <ShieldCheck className="h-4 w-4 text-primary" weight="fill" />
+                      <span className="text-sm leading-7 text-foreground">{row}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -79,53 +77,61 @@ export function LoginPage() {
               </Link>
               <span className="text-border">/</span>
               <Link to="/register" className="transition-colors hover:text-foreground">
-                创建新账号
+                创建账号
               </Link>
             </div>
           </section>
 
-          <section className="glass flex items-center p-4 md:p-6">
-            <Card className="w-full border-none bg-transparent shadow-none">
-              <CardHeader className="p-4 md:p-6">
-                <CardTitle className="text-2xl md:text-3xl">登录控制台</CardTitle>
-                <CardDescription>继续管理站点、凭据、域名验证和部署动作。</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">邮箱</label>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="dev@example.com"
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">使用已验证的管理邮箱登录。</p>
+          <section className="surface flex items-center p-5 md:p-6">
+            <div className="mx-auto w-full max-w-xl">
+              <div className="section-label">Sign In</div>
+              <h2 className="mt-2 text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
+                登录控制台
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                继续管理站点、凭据、域名验证和部署动作。
+              </p>
+
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">邮箱</label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="dev@example.com"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">使用已验证的管理邮箱登录。</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">密码</label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="请输入账号密码"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">登录成功后会自动跳转到新版概览页。</p>
+                </div>
+                {error && (
+                  <div className="rounded-[1.3rem] border border-destructive/15 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+                    {error}
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">密码</label>
-                    <Input
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="请输入账号密码"
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">登录成功后会自动跳转到新版概览页。</p>
+                )}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <ClockCountdown className="h-4 w-4 text-primary" weight="duotone" />
+                    登录后继续当前工作上下文
                   </div>
-                  {error && (
-                    <div className="rounded-[1.3rem] border border-destructive/15 bg-destructive/8 px-4 py-3 text-sm text-destructive">
-                      {error}
-                    </div>
-                  )}
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "正在登录..." : "进入系统管理界面"}
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "正在登录..." : "进入系统"}
                     {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
-                </form>
-              </CardContent>
-            </Card>
+                </div>
+              </form>
+            </div>
           </section>
         </div>
       </div>

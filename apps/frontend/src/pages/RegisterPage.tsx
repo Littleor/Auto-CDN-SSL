@@ -1,18 +1,29 @@
-import {
-  ArrowRight,
-  CheckCircle,
-  Cloud,
-  Database,
-  ShieldCheck
-} from "@phosphor-icons/react";
+import { ArrowRight, CheckCircle, Cloud, Database, ShieldCheck } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageSeo } from "@/lib/seo";
+
+const introRows = [
+  {
+    title: "证书与验证集中管理",
+    description: "域名挑战方式可以按顶级域名统一配置。",
+    icon: ShieldCheck
+  },
+  {
+    title: "CDN 凭据与站点同步",
+    description: "腾讯云和七牛云平台会放在同一工作流里。",
+    icon: Cloud
+  },
+  {
+    title: "SEO 与后台视觉统一",
+    description: "首页抓取体验和进入后台后的体验保持一致。",
+    icon: Database
+  }
+];
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -49,14 +60,18 @@ export function RegisterPage() {
   return (
     <div className="min-h-[100dvh]">
       <div className="mx-auto max-w-[1360px] px-4 py-4 sm:px-6 sm:py-6">
-        <div className="grid min-h-[calc(100dvh-3rem)] gap-6 lg:grid-cols-[0.96fr_1.04fr]">
-          <section className="glass flex items-center p-4 md:p-6 lg:order-2">
-            <Card className="w-full border-none bg-transparent shadow-none">
-              <CardHeader className="p-4 md:p-6">
-                <CardTitle className="text-2xl md:text-3xl">创建开发者账号</CardTitle>
-                <CardDescription>注册后即可进入新版控制台管理 SSL 生命周期。</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+        <div className="grid min-h-[calc(100dvh-3rem)] gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <section className="surface flex items-center p-5 md:p-6 lg:order-2">
+            <div className="mx-auto w-full max-w-xl">
+              <div className="section-label">Create Account</div>
+              <h2 className="mt-2 text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
+                创建开发者账号
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                注册后即可进入新的系统管理界面。
+              </p>
+
+              <div className="mt-8">
                 {success ? (
                   <div className="space-y-5">
                     <div className="rounded-[1.5rem] border border-emerald-600/12 bg-emerald-600/8 px-5 py-4">
@@ -70,7 +85,7 @@ export function RegisterPage() {
                         </div>
                       </div>
                     </div>
-                    <Button className="w-full" onClick={() => navigate("/login")}>
+                    <Button onClick={() => navigate("/login")}>
                       去登录
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -107,52 +122,54 @@ export function RegisterPage() {
                         placeholder="至少 8 位"
                         required
                       />
-                      <p className="text-xs text-muted-foreground">注册完成后可立即登录新版控制台。</p>
+                      <p className="text-xs text-muted-foreground">注册完成后即可登录控制台。</p>
                     </div>
                     {error && (
                       <div className="rounded-[1.3rem] border border-destructive/15 bg-destructive/8 px-4 py-3 text-sm text-destructive">
                         {error}
                       </div>
                     )}
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button type="submit" disabled={loading}>
                       {loading ? "正在创建..." : "创建账号并发送验证邮件"}
                       {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
                     </Button>
                   </form>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </section>
 
-          <section className="surface flex flex-col justify-between p-7 md:p-10 lg:order-1">
+          <section className="surface flex flex-col justify-between p-7 md:p-8 lg:order-1">
             <div>
               <BrandMark />
-              <div className="mt-10 max-w-3xl space-y-5">
+              <div className="mt-10 max-w-3xl">
                 <div className="section-label">Create Workspace</div>
-                <h1 className="text-4xl font-semibold leading-none tracking-[-0.06em] text-foreground md:text-6xl">
-                  从第一天开始，用更完整的界面维护 CDN 证书
+                <h1 className="mt-3 max-w-2xl text-[2.2rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground md:text-[3.4rem]">
+                  从一开始就用更简洁的后台维护 CDN 证书
                 </h1>
-                <p className="max-w-[62ch] text-base leading-8 text-muted-foreground">
-                  这次改版不只换了皮肤，还把 Landing、SEO 和管理后台统一成同一个品牌系统，
-                  用户注册后不会再从公开站跳进一个完全不同风格的后台。
+                <p className="mt-4 max-w-[58ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
+                  这次改版把公开页、登录注册和系统管理骨架拉回到同一套极简系统里，后续继续调整风格也能从全局出发。
                 </p>
               </div>
 
-              <div className="mt-10 grid gap-4 md:grid-cols-3">
-                <div className="line-panel px-4 py-4">
-                  <ShieldCheck className="h-5 w-5 text-foreground" weight="duotone" />
-                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">证书与验证集中管理</div>
-                  <div className="mt-1 text-xs leading-5 text-muted-foreground">域名挑战方式可以按顶级域名统一配置。</div>
-                </div>
-                <div className="line-panel px-4 py-4">
-                  <Cloud className="h-5 w-5 text-foreground" weight="duotone" />
-                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">CDN 凭据与站点同步</div>
-                  <div className="mt-1 text-xs leading-5 text-muted-foreground">腾讯云和七牛云平台会放在同一工作流里。</div>
-                </div>
-                <div className="line-panel px-4 py-4">
-                  <Database className="h-5 w-5 text-foreground" weight="duotone" />
-                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">SEO 与后台视觉统一</div>
-                  <div className="mt-1 text-xs leading-5 text-muted-foreground">首页抓取体验和进入后台后的体验保持一致。</div>
+              <div className="mt-8 overflow-hidden rounded-[1.6rem] border border-border/65 bg-white/56">
+                <div className="divide-y divide-border/60">
+                  {introRows.map((row) => {
+                    const Icon = row.icon;
+                    return (
+                      <div key={row.title} className="flex gap-3 px-5 py-4">
+                        <Icon className="mt-1 h-4 w-4 text-primary" weight="duotone" />
+                        <div>
+                          <div className="text-sm font-medium tracking-tight text-foreground">
+                            {row.title}
+                          </div>
+                          <div className="mt-1 text-xs leading-5 text-muted-foreground">
+                            {row.description}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

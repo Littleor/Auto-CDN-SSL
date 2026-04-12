@@ -48,14 +48,14 @@ export default {
         sm: "calc(var(--radius) - 4px)"
       },
       fontFamily: {
-        sans: ["Outfit", "ui-sans-serif", "system-ui"],
-        display: ["Outfit", "ui-sans-serif", "system-ui"],
-        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular"]
+        sans: ["SF Pro Display", "SF Pro Text", "Geist", "Helvetica Neue", "sans-serif"],
+        display: ["SF Pro Display", "SF Pro Text", "Geist", "Helvetica Neue", "sans-serif"],
+        mono: ["SF Mono", "JetBrains Mono", "ui-monospace", "monospace"]
       },
       boxShadow: {
-        glow: "0 24px 60px -40px rgba(24, 98, 67, 0.24), 0 0 0 1px rgba(24, 98, 67, 0.08)",
-        soft: "0 28px 70px -50px rgba(60, 49, 38, 0.32)",
-        diffuse: "0 40px 90px -58px rgba(60, 49, 38, 0.32)"
+        glow: "0 24px 56px -40px rgba(63, 128, 215, 0.18), 0 0 0 1px rgba(63, 128, 215, 0.08)",
+        soft: "0 22px 52px -38px rgba(15, 23, 42, 0.16)",
+        diffuse: "0 30px 80px -48px rgba(15, 23, 42, 0.16)"
       },
       keyframes: {
         float: {
