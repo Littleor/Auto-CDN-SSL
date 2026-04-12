@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy, Search } from "lucide-react";
+import { Check, Copy, MagnifyingGlass } from "@phosphor-icons/react";
+import { EmptyState } from "@/components/EmptyState";
+import { PageIntro } from "@/components/PageIntro";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -92,22 +94,36 @@ export function DeploymentsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">历史记录</h2>
-        <p className="text-sm text-muted-foreground">统一查看证书续签与 CDN 部署的执行轨迹。</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          仅记录实际执行的续签与部署；如果定时扫描判断“当前无需续签”，不会生成历史记录。
-        </p>
-      </div>
+      <PageIntro
+        eyebrow="History Feed"
+        title="把续签与部署的执行轨迹放到一个可以长期回溯的时间面板里"
+        description="除了视觉统一，这页也把搜索、复制备注和空状态都整理进了同一套界面表达，查错时会更顺手。"
+        stats={[
+          {
+            label: "历史总数",
+            value: String(history.length),
+            hint: "已记录的续签与部署动作"
+          },
+          {
+            label: "当前结果",
+            value: String(filteredHistory.length),
+            hint: "当前搜索条件下的匹配结果"
+          }
+        ]}
+      />
 
-      <Card>
+      <Card className="p-1">
         <CardHeader className="gap-4">
           <div>
+            <div className="section-label">Recent Events</div>
             <CardTitle>最近历史</CardTitle>
             <p className="mt-2 text-sm text-muted-foreground">自动与手动操作会使用不同颜色标识，便于快速分辨来源。</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              仅记录实际执行的续签与部署；如果定时扫描判断“当前无需续签”，不会生成历史记录。
+            </p>
           </div>
           <div className="relative max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -184,7 +200,11 @@ export function DeploymentsPage() {
           </Table>
 
           {filteredHistory.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">暂无匹配的历史记录。</div>
+            <EmptyState
+              icon={<Copy className="h-6 w-6" weight="duotone" />}
+              title="暂无匹配的历史记录"
+              description="可以换一个关键词搜索，或者等系统产生新的续签、部署动作后再回来查看。"
+            />
           ) : (
             <PaginationControls
               totalItems={filteredHistory.length}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { PageIntro } from "@/components/PageIntro";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,25 +65,39 @@ export function RenewalSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
-          <SlidersHorizontal className="h-5 w-5" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-semibold">CDN 续签设置</h2>
-          <p className="text-sm text-muted-foreground">
-            统一管理 CDN SSL 证书续签时间与部署策略。
-          </p>
-        </div>
-      </div>
+      <PageIntro
+        eyebrow="Renewal Policy"
+        title="把调度时间、提前续签阈值和自动部署策略收进一套统一配置"
+        description="续签策略页现在更强调策略本身，而不是零散输入框。每天什么时候跑、提前多久开始续签、是否自动部署，都在这里集中维护。"
+        stats={[
+          {
+            label: "每日调度",
+            value:
+              settings === null
+                ? "--:--"
+                : formatTimeValue(settings.renewalHour, settings.renewalMinute),
+            hint: "控制台每天执行自动续签的时间"
+          },
+          {
+            label: "提前天数",
+            value: settings === null ? "--" : `${settings.renewalThresholdDays}`,
+            hint: "证书距离到期多少天开始续签"
+          }
+        ]}
+      />
 
-      <Card>
+      <Card className="p-1">
         <CardHeader>
+          <div className="section-label">Policy Settings</div>
           <CardTitle>续签策略</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {!settings ? (
-            <div className="text-sm text-muted-foreground">加载中...</div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="skeleton-block h-32" />
+              <div className="skeleton-block h-32" />
+              <div className="skeleton-block h-32" />
+            </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">

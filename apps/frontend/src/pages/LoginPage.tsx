@@ -1,10 +1,12 @@
+import { ArrowRight, Certificate, ClockCountdown, ShieldCheck } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePageSeo } from "@/lib/seo";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -13,6 +15,13 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  usePageSeo({
+    title: "登录控制台 | Auto CDN SSL",
+    description: "登录 Auto CDN SSL 控制台，管理 CDN SSL 证书续签、部署和域名验证。",
+    path: "/login",
+    robots: "noindex,nofollow"
+  });
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -29,82 +38,95 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute left-10 top-20 h-72 w-72 rounded-full bg-primary/12 blur-3xl" />
-        <div className="absolute bottom-10 right-10 h-72 w-72 rounded-full bg-accent/18 blur-3xl" />
-      </div>
-
-      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-16">
-        <div className="grid w-full gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="flex flex-col justify-center space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background shadow-glow">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Auto CDN SSL</p>
-                <h1 className="font-display text-5xl font-semibold tracking-tight">
-                  CDN SSL 证书全生命周期管理
+    <div className="min-h-[100dvh]">
+      <div className="mx-auto max-w-[1360px] px-4 py-4 sm:px-6 sm:py-6">
+        <div className="grid min-h-[calc(100dvh-3rem)] gap-6 lg:grid-cols-[1.04fr_0.96fr]">
+          <section className="surface flex flex-col justify-between p-7 md:p-10">
+            <div>
+              <BrandMark />
+              <div className="mt-10 max-w-3xl space-y-5">
+                <div className="section-label">Console Access</div>
+                <h1 className="text-4xl font-semibold leading-none tracking-[-0.06em] text-foreground md:text-6xl">
+                  登录后继续处理你的 CDN 证书队列
                 </h1>
+                <p className="max-w-[62ch] text-base leading-8 text-muted-foreground">
+                  新版后台把续签状态、部署记录和凭据管理统一到一个界面里，登录后就能直接回到当前工作上下文。
+                </p>
               </div>
-            </div>
-            <p className="max-w-xl text-lg text-muted-foreground">
-              为多开发者、多网站提供一站式证书生命周期管理，支持腾讯云与七牛云 CDN 自动部署。
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <div className="surface px-4 py-3 text-sm">
-                证书到期提醒 + 自动续签
-              </div>
-              <div className="surface px-4 py-3 text-sm">
-                多平台凭据统一管理
-              </div>
-              <div className="surface px-4 py-3 text-sm">
-                统一部署记录与失败诊断
-              </div>
-            </div>
-          </div>
 
-          <Card className="glass">
-            <CardHeader>
-              <CardTitle>登录控制台</CardTitle>
-              <CardDescription>使用开发者账号进入证书管理中心。</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">邮箱</label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="dev@example.com"
-                    required
-                  />
+              <div className="mt-10 grid gap-4 md:grid-cols-3">
+                <div className="line-panel px-4 py-4">
+                  <ShieldCheck className="h-5 w-5 text-foreground" weight="duotone" />
+                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">证书状态集中查看</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">到期窗口与 HTTPS 状态放在一个视图中。</div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">密码</label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="至少 8 位"
-                    required
-                  />
+                <div className="line-panel px-4 py-4">
+                  <ClockCountdown className="h-5 w-5 text-foreground" weight="duotone" />
+                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">续签策略持续执行</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">每日调度和提前阈值统一维护。</div>
                 </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "正在登录..." : "进入控制台"}
-                </Button>
-              </form>
-              <p className="mt-4 text-center text-sm text-muted-foreground">
-                还没有账号？
-                <Link to="/register" className="ml-1 text-primary hover:underline">
-                  创建账号
-                </Link>
-              </p>
-            </CardContent>
-          </Card>
+                <div className="line-panel px-4 py-4">
+                  <Certificate className="h-5 w-5 text-foreground" weight="duotone" />
+                  <div className="mt-4 text-sm font-semibold tracking-tight text-foreground">部署动作留痕</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">失败原因与触发来源可以随时追溯。</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-3 text-sm text-muted-foreground">
+              <Link to="/" className="transition-colors hover:text-foreground">
+                返回官网
+              </Link>
+              <span className="text-border">/</span>
+              <Link to="/register" className="transition-colors hover:text-foreground">
+                创建新账号
+              </Link>
+            </div>
+          </section>
+
+          <section className="glass flex items-center p-4 md:p-6">
+            <Card className="w-full border-none bg-transparent shadow-none">
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-2xl md:text-3xl">登录控制台</CardTitle>
+                <CardDescription>继续管理站点、凭据、域名验证和部署动作。</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">邮箱</label>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="dev@example.com"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">使用已验证的管理邮箱登录。</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">密码</label>
+                    <Input
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="请输入账号密码"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">登录成功后会自动跳转到新版概览页。</p>
+                  </div>
+                  {error && (
+                    <div className="rounded-[1.3rem] border border-destructive/15 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+                      {error}
+                    </div>
+                  )}
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "正在登录..." : "进入系统管理界面"}
+                    {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </section>
         </div>
       </div>
     </div>

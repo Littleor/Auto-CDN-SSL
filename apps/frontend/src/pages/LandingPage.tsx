@@ -1,279 +1,383 @@
-import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  BadgeCheck,
+  Certificate,
   Cloud,
-  Clock,
+  ClockCountdown,
+  Database,
+  GlobeHemisphereWest,
   Lock,
-  ServerCog,
   ShieldCheck,
-  Sparkles,
-  Zap
-} from "lucide-react";
+  Sparkle,
+  TrendUp
+} from "@phosphor-icons/react";
+import { Link } from "react-router-dom";
+import { BrandMark } from "@/components/BrandMark";
+import { MagneticButton } from "@/components/MagneticButton";
+import { LandingShowcase } from "@/components/marketing/LandingShowcase";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { usePageSeo } from "@/lib/seo";
 
-const features = [
+const capabilityColumns = [
   {
-    title: "CDN SSL 自动续签",
-    desc: "证书到期前自动触发续签，保障线上服务连续可用。",
-    icon: ShieldCheck
+    title: "把续签、验证、部署放进同一条流水线",
+    description:
+      "系统围绕 CDN SSL 运维场景设计，不需要把证书、部署和历史记录拆散到多个平台手动拼接。",
+    points: ["腾讯云 CDN / 七牛云 CDN", "HTTP-01 / DNS-01", "续签与部署记录统一回看"],
+    icon: GlobeHemisphereWest
   },
   {
-    title: "多平台一键部署",
-    desc: "支持腾讯云、七牛云 CDN 平台，续签后自动下发证书。",
-    icon: Cloud
-  },
-  {
-    title: "可视化到期洞察",
-    desc: "证书生命周期一目了然，异常情况及时预警。",
-    icon: Clock
-  },
-  {
-    title: "密钥安全加密",
-    desc: "凭据与证书采用 AES-256-GCM 加密存储，降低泄露风险。",
-    icon: Lock
+    title: "把风险暴露在到期前，而不是事故发生后",
+    description:
+      "站点状态、到期窗口、HTTPS 启用状态和部署结果放在一张控制面板里，问题能更早出现。",
+    points: ["到期时间与有效期进度", "CDN 侧 HTTPS 状态", "自动与手动触发来源区分"],
+    icon: ClockCountdown
   }
 ];
 
-const steps = [
+const workflow = [
   {
-    title: "接入 CDN 凭据",
-    desc: "新增腾讯云或七牛云凭据，系统自动拉取站点信息。",
-    icon: ServerCog
+    title: "连接 CDN 与 DNS 凭据",
+    description:
+      "接入腾讯云或七牛云凭据后，系统可以同步站点、复用 DNS 验证能力并保持后续部署链路可用。"
   },
   {
-    title: "配置验证方式",
-    desc: "按顶级域名配置 HTTP-01 或 DNS-01 验证策略。",
-    icon: BadgeCheck
+    title: "为顶级域名设定验证方式",
+    description:
+      "按 apex domain 统一配置 HTTP-01 或 DNS-01，后续新增站点时无需重复配置同一套挑战策略。"
   },
   {
-    title: "自动续签与部署",
-    desc: "到期前自动续签并同步到 CDN，状态实时可见。",
-    icon: Zap
+    title: "在控制台里持续运行续签调度",
+    description:
+      "到期阈值、调度时间和自动部署策略都可以集中维护，历史记录保留每次动作的来源与结果。"
   }
 ];
 
 const faqs = [
   {
-    q: "是否只面向 CDN 场景？",
-    a: "是的，Auto CDN SSL 聚焦 CDN 场景的 SSL 证书续签、部署与监控。"
+    question: "这个系统更适合哪些场景？",
+    answer:
+      "更适合 CDN 站点较多、证书更新频繁、又希望把续签和部署动作放到同一个控制台里的团队。"
   },
   {
-    q: "支持哪些平台？",
-    a: "当前支持腾讯云与七牛云 CDN，并支持腾讯云 DNS-01 验证。"
+    question: "支持哪些平台和验证方式？",
+    answer:
+      "当前支持腾讯云 CDN、七牛云 CDN，以及 HTTP-01、DNS-01 两类验证路径，DNS-01 可复用腾讯云凭据。"
   },
   {
-    q: "证书数据是否安全？",
-    a: "平台使用 AES-256-GCM 对敏感数据加密，密钥由你的环境变量提供。"
+    question: "凭据和证书如何保护？",
+    answer:
+      "敏感数据在后端以 AES-256-GCM 加密保存，部署、续签与失败信息会留下记录，便于审计与排障。"
   }
 ];
 
 export function LandingPage() {
+  usePageSeo({
+    title: "Auto CDN SSL | CDN SSL 证书自动续签与部署平台",
+    description:
+      "Auto CDN SSL 是面向 CDN 场景的 SSL 证书自动续签与部署平台，支持腾讯云与七牛云 CDN，覆盖续签调度、部署留痕、域名验证与凭据加密管理。",
+    path: "/",
+    keywords:
+      "CDN SSL, SSL 证书续签, CDN 证书部署, 腾讯云 CDN, 七牛云 CDN, Let's Encrypt, DNS-01, HTTP-01",
+    structuredData: [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "Auto CDN SSL",
+        url: "https://auto-cdn-ssl.littleor.cn/",
+        inLanguage: "zh-CN",
+        description:
+          "面向 CDN 场景的 SSL 证书自动续签与部署平台，统一管理续签、部署、验证与历史记录。"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: "Auto CDN SSL",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        url: "https://auto-cdn-ssl.littleor.cn/",
+        description:
+          "统一管理 CDN SSL 证书续签、域名验证、凭据同步与自动部署的 Web 控制台。",
+        featureList: [
+          "腾讯云 CDN 与七牛云 CDN",
+          "HTTP-01 与 DNS-01 验证",
+          "续签与部署历史留痕",
+          "凭据与证书加密存储"
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqs.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer
+          }
+        }))
+      }
+    ]
+  });
+
   return (
-    <div className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute left-[-120px] top-[-80px] h-96 w-96 rounded-full bg-primary/15 blur-3xl" />
-        <div className="absolute right-[-120px] top-10 h-[28rem] w-[28rem] rounded-full bg-accent/20 blur-3xl" />
-      </div>
+    <div className="min-h-[100dvh]">
+      <div className="mx-auto max-w-[1440px] px-4 py-4 sm:px-6 sm:py-6">
+        <header className="surface px-5 py-4 md:px-7">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <BrandMark />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/login">登录控制台</Link>
+              </Button>
+              <MagneticButton>
+                <Button size="sm" asChild>
+                  <Link to="/register">
+                    创建账号
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </MagneticButton>
+            </div>
+          </div>
+        </header>
 
-      <section className="mx-auto flex min-h-[90vh] max-w-6xl flex-col justify-center gap-10 px-6 py-20 lg:flex-row lg:items-center">
-        <div className="space-y-6 lg:w-3/5">
-          <div className="flex items-center gap-2">
-            <Badge className="bg-foreground/5 text-foreground" variant="muted">
-              CDN SSL 专用
-            </Badge>
-            <span className="text-xs text-muted-foreground">Auto CDN SSL</span>
-          </div>
-          <h1 className="font-display text-5xl font-semibold leading-tight tracking-tight md:text-6xl">
-            CDN SSL 证书自动续签与部署
-            <span className="gradient-text">一体化平台</span>
-          </h1>
-          <p className="max-w-2xl text-lg text-muted-foreground">
-            Auto CDN SSL 为开发团队提供可视化证书运营能力，自动续签、自动部署、自动监控，
-            让 CDN HTTPS 始终安全稳定。
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link to="/register">
-                立即开始 <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/login">已有账号登录</Link>
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <span>适配企业级 CDN 续签流程</span>
-            <span>多站点多账号协作</span>
-            <span>到期风险可视化</span>
-          </div>
-        </div>
-
-        <div className="lg:w-2/5">
-          <Card className="surface shadow-glow">
-            <CardHeader className="flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base">证书状态看板</CardTitle>
-                <p className="text-xs text-muted-foreground">实时同步 CDN SSL 状态</p>
-              </div>
-              <Sparkles className="h-5 w-5 text-accent" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-2xl border border-border/60 bg-white/80 px-4 py-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">cdn.example.com</span>
-                  <Badge variant="success">正常</Badge>
+        <main className="space-y-6 pt-6">
+          <section className="grid min-h-[calc(100dvh-7rem)] gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+            <div className="surface p-7 md:p-10">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-full border border-primary/12 bg-primary/8 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-primary">
+                  CDN SSL Operations
                 </div>
-                <div className="mt-3">
-                  <div className="h-1.5 w-full rounded-full bg-muted/80">
-                    <div className="h-1.5 w-3/4 rounded-full bg-emerald-500" />
-                  </div>
-                  <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                    <span>剩余 67 天</span>
-                    <span>67/90</span>
-                  </div>
+                <div className="rounded-full border border-border/80 bg-white/70 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                  Landing & SEO Refreshed
                 </div>
               </div>
-              <div className="rounded-2xl border border-border/60 bg-white/80 px-4 py-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">static.example.com</span>
-                  <Badge variant="warning">临近</Badge>
+
+              <div className="mt-8 space-y-6">
+                <h1 className="max-w-4xl text-4xl font-semibold leading-none tracking-[-0.06em] text-foreground md:text-6xl">
+                  为 CDN 证书运维准备一张真正能长期使用的控制台
+                </h1>
+                <p className="max-w-[65ch] text-base leading-8 text-muted-foreground md:text-lg">
+                  Auto CDN SSL 把续签、验证、部署和历史留痕收进一套控制面里，
+                  让腾讯云与七牛云 CDN 的 HTTPS 维护不再依赖手工巡检和临时脚本。
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <MagneticButton>
+                  <Button asChild size="lg">
+                    <Link to="/register">
+                      进入新版控制台
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </MagneticButton>
+                <Button variant="outline" size="lg" asChild>
+                  <Link to="/login">已有账号，直接登录</Link>
+                </Button>
+              </div>
+
+              <div className="mt-10 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="line-panel px-4 py-4">
+                  <div className="section-label">Support</div>
+                  <div className="mt-3 text-2xl font-semibold tracking-tight text-foreground">双平台</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">腾讯云 CDN 与七牛云 CDN</div>
                 </div>
-                <div className="mt-3">
-                  <div className="h-1.5 w-full rounded-full bg-muted/80">
-                    <div className="h-1.5 w-2/5 rounded-full bg-amber-500" />
-                  </div>
-                  <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                    <span>剩余 12 天</span>
-                    <span>12/90</span>
-                  </div>
+                <div className="line-panel px-4 py-4">
+                  <div className="section-label">Validation</div>
+                  <div className="mt-3 text-2xl font-semibold tracking-tight text-foreground">双验证</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">HTTP-01 与 DNS-01</div>
+                </div>
+                <div className="line-panel px-4 py-4">
+                  <div className="section-label">Security</div>
+                  <div className="mt-3 text-2xl font-semibold tracking-tight text-foreground">加密存储</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">AES-256-GCM 保护敏感数据</div>
+                </div>
+                <div className="line-panel px-4 py-4">
+                  <div className="section-label">History</div>
+                  <div className="mt-3 text-2xl font-semibold tracking-tight text-foreground">可追溯</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">续签与部署动作集中留痕</div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+            </div>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center justify-between gap-6">
-          <div>
-            <h2 className="font-display text-3xl font-semibold tracking-tight">核心能力</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              面向 CDN SSL 场景，构建稳定、可观测、可自动化的证书运营体系。
-            </p>
-          </div>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => {
-            const Icon = feature.icon;
-            return (
-              <Card key={feature.title}>
-                <CardHeader className="flex-row items-start justify-between">
-                  <CardTitle className="text-base">{feature.title}</CardTitle>
-                  <div className="rounded-2xl bg-foreground/5 p-2 text-foreground">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">
-                  {feature.desc}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
+            <LandingShowcase />
+          </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="font-display text-3xl font-semibold tracking-tight">工作流</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              从接入凭据到自动部署，只需三个步骤。
-            </p>
-          </div>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <Card key={step.title}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-foreground/5 text-foreground" variant="muted">
-                      {`0${index + 1}`}
-                    </Badge>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <CardTitle className="mt-2 text-base">{step.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">
-                  {step.desc}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <Card className="surface border border-foreground/10 bg-white/80">
-          <CardContent className="grid gap-6 py-10 md:grid-cols-[1.2fr_1fr]">
-            <div className="space-y-4">
-              <Badge className="bg-foreground/5 text-foreground" variant="muted">
-                安全与合规
-              </Badge>
-              <h2 className="font-display text-3xl font-semibold tracking-tight">
-                用安全的方式管理证书与凭据
+          <section className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
+            <div className="surface p-7 md:p-9">
+              <div className="section-label">Why This Interface Works</div>
+              <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.05em] text-foreground md:text-5xl">
+                少一点模板感，多一点真正为运维场景服务的信息组织
               </h2>
-              <p className="text-sm text-muted-foreground">
-                证书与密钥使用 AES-256-GCM 加密存储，敏感配置留在你的环境变量中，
-                同时保留部署与续签行为的可追溯记录。
-              </p>
+              <div className="mt-8 grid gap-5 md:grid-cols-2">
+                {capabilityColumns.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <article key={item.title} className="line-panel p-5">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/80 bg-white/90 text-foreground shadow-[0_14px_30px_-22px_rgba(56,46,35,0.3)]">
+                        <Icon className="h-5 w-5" weight="duotone" />
+                      </div>
+                      <h3 className="mt-5 text-xl font-semibold tracking-tight text-foreground">
+                        {item.title}
+                      </h3>
+                      <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
+                      <ul className="mt-5 space-y-2">
+                        {item.points.map((point) => (
+                          <li key={point} className="flex items-start gap-2 text-sm leading-7 text-foreground/88">
+                            <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" weight="fill" />
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  );
+                })}
+              </div>
             </div>
-            <div className="grid gap-3 text-sm text-muted-foreground">
-              <div className="surface px-4 py-3">加密存储与传输隔离</div>
-              <div className="surface px-4 py-3">可配置续签时间与策略</div>
-              <div className="surface px-4 py-3">部署记录全链路留痕</div>
+
+            <div className="grid gap-6">
+              <article className="surface p-7">
+                <div className="flex items-center justify-between">
+                  <div className="section-label">Built For Teams</div>
+                  <TrendUp className="h-5 w-5 text-muted-foreground" weight="duotone" />
+                </div>
+                <h3 className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-foreground">
+                  对规模增长更友好，而不是把复杂度继续交给人
+                </h3>
+                <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                  当站点、平台和环境逐渐变多时，证书运维的问题不是某一次续签，而是每个月都要重复确认同样的事情。
+                  新版 Landing 把这一点讲清楚，也让搜索引擎更容易理解产品定位。
+                </p>
+              </article>
+
+              <article className="surface p-7">
+                <div className="flex items-center justify-between">
+                  <div className="section-label">Core Guarantees</div>
+                  <Lock className="h-5 w-5 text-muted-foreground" weight="duotone" />
+                </div>
+                <div className="mt-6 grid gap-4">
+                  <div className="line-panel px-4 py-4">
+                    <div className="flex items-start gap-3">
+                      <Certificate className="mt-1 h-5 w-5 text-foreground" weight="duotone" />
+                      <div>
+                        <div className="text-sm font-semibold tracking-tight text-foreground">
+                          证书状态与到期窗口统一展示
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-muted-foreground">
+                          管理员可以从单页里判断站点健康度，而不是来回切换平台。
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="line-panel px-4 py-4">
+                    <div className="flex items-start gap-3">
+                      <Cloud className="mt-1 h-5 w-5 text-foreground" weight="duotone" />
+                      <div>
+                        <div className="text-sm font-semibold tracking-tight text-foreground">
+                          凭据同步、站点同步与部署动作在同一系统内闭环
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-muted-foreground">
+                          降低手工整理信息的成本，也方便排查是验证失败还是 CDN 下发失败。
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="line-panel px-4 py-4">
+                    <div className="flex items-start gap-3">
+                      <Database className="mt-1 h-5 w-5 text-foreground" weight="duotone" />
+                      <div>
+                        <div className="text-sm font-semibold tracking-tight text-foreground">
+                          SEO 元信息、结构化数据与公开页语义化结构一起补齐
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-muted-foreground">
+                          首页更聚焦，抓取路径更清晰，权重也更集中到真正希望被索引的页面。
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </article>
             </div>
-          </CardContent>
-        </Card>
-      </section>
+          </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-3xl font-semibold tracking-tight">常见问题</h2>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {faqs.map((item) => (
-            <Card key={item.q}>
-              <CardHeader>
-                <CardTitle className="text-base">{item.q}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {item.a}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+          <section className="surface p-7 md:p-9">
+            <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <div className="section-label">Workflow</div>
+                <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-foreground md:text-5xl">
+                  从接入到自动续签，整个流程被重新梳理成更顺手的界面
+                </h2>
+              </div>
+              <div className="grid gap-4">
+                {workflow.map((item, index) => (
+                  <article key={item.title} className="grid gap-4 rounded-[1.8rem] border border-white/75 bg-white/72 p-5 shadow-[0_24px_50px_-40px_rgba(56,46,35,0.28)] md:grid-cols-[auto_1fr]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-background">
+                      <span className="text-sm font-semibold tracking-tight">{`0${index + 1}`}</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold tracking-tight text-foreground">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.description}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="surface flex flex-col items-start justify-between gap-6 rounded-3xl px-8 py-10 md:flex-row md:items-center">
-          <div>
-            <h2 className="font-display text-3xl font-semibold tracking-tight">
-              现在就开始构建稳定的 CDN SSL 体系
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              让证书续签和部署成为一种可控、可视化的流程。
-            </p>
-          </div>
-          <Button asChild size="lg">
-            <Link to="/register">免费开始</Link>
-          </Button>
-        </div>
-      </section>
+          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="surface p-7 md:p-9">
+              <div className="section-label">FAQ</div>
+              <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-foreground md:text-5xl">
+                公开页文案也一起朝“可读、可索引、可转化”方向收紧
+              </h2>
+            </div>
+            <div className="grid gap-4">
+              {faqs.map((item) => (
+                <article key={item.question} className="surface p-6">
+                  <div className="flex items-start gap-3">
+                    <Sparkle className="mt-1 h-5 w-5 text-primary" weight="fill" />
+                    <div>
+                      <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                        {item.question}
+                      </h3>
+                      <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="surface p-7 md:p-9">
+            <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <div className="section-label">Ready To Operate</div>
+                <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-foreground md:text-5xl">
+                  如果你想让 SSL 运维从“手工记忆”变成“长期系统”，这一版界面已经更像一个正式产品了
+                </h2>
+                <p className="mt-4 max-w-[64ch] text-sm leading-7 text-muted-foreground md:text-base">
+                  Landing 页的品牌表达、SEO 结构和控制台视觉已经统一起来，
+                  从用户第一次访问到进入系统管理，都能保持同一套信息节奏。
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 lg:justify-end">
+                <MagneticButton>
+                  <Button size="lg" asChild>
+                    <Link to="/register">
+                      立即创建账号
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </MagneticButton>
+                <Button variant="outline" size="lg" asChild>
+                  <Link to="/login">进入控制台</Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

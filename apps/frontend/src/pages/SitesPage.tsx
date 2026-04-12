@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpDown, Loader2, Plus, Search, ShieldCheck, Server } from "lucide-react";
+import {
+  ArrowsDownUp,
+  CircleNotch,
+  Database,
+  MagnifyingGlass,
+  Plus,
+  ShieldCheck
+} from "@phosphor-icons/react";
+import { EmptyState } from "@/components/EmptyState";
+import { PageIntro } from "@/components/PageIntro";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -354,104 +363,128 @@ export function SitesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold">CDN SSL 证书管理</h2>
-          <p className="text-sm text-muted-foreground">专用于 CDN 服务的 SSL 证书续签与部署管理。</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={handleIssueAll} disabled={issuingAll || filteredSites.length === 0}>
-            {issuingAll ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <ShieldCheck className="mr-2 h-4 w-4" />
-            )}
-            {issuingAll ? "续签中..." : "一键续签并部署"}
-          </Button>
-          <Dialog
-            open={open}
-            onOpenChange={(value) => {
-              setOpen(value);
-              if (value) {
-                setForm(defaultForm);
-                setError(null);
-              }
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                新建 CDN 站点
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>新增 CDN 站点</DialogTitle>
-                <DialogDescription>填写 CDN 站点与证书信息。</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">站点名称</label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="如：主站" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">域名</label>
-                  <Input value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="example.com" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">证书来源</label>
-                  <Select value={form.certificateSource} onValueChange={(value) => setForm({ ...form, certificateSource: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择证书来源" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="letsencrypt">Let's Encrypt</SelectItem>
-                      <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {form.certificateSource === "letsencrypt" && (
-                    <p className="text-xs text-muted-foreground">验证方式在“域名验证”里按顶级域名统一配置。</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">CDN 平台凭据</label>
-                  <Select value={form.providerCredentialId} onValueChange={(value) => setForm({ ...form, providerCredentialId: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择凭据 (可选)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {providerOptions.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name} ({getPlatformLabel(provider.providerType)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  取消
+      <PageIntro
+        eyebrow="Sites & Certificates"
+        title="把 CDN 站点、证书状态和部署动作放在一张表里处理"
+        description="这个页面现在更像一个长期使用的运维工作台：筛选、排序、批量续签和动作反馈都被拉到了同一视觉体系下。"
+        stats={[
+          {
+            label: "站点数量",
+            value: String(sites.length),
+            hint: "已接入控制台的 CDN 域名"
+          },
+          {
+            label: "已绑定平台",
+            value: String(decoratedSites.filter((site) => Boolean(site.providerType)).length),
+            hint: "已关联腾讯云或七牛云凭据"
+          },
+          {
+            label: "30 天风险",
+            value: String(decoratedSites.filter((site) => site.days !== null && site.days <= 30).length),
+            hint: "近期需要重点确认的证书"
+          },
+          {
+            label: "筛选结果",
+            value: String(filteredSites.length),
+            hint: "当前过滤条件下的站点数量"
+          }
+        ]}
+        action={
+          <>
+            <Button variant="secondary" onClick={handleIssueAll} disabled={issuingAll || filteredSites.length === 0}>
+              {issuingAll ? (
+                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="mr-2 h-4 w-4" weight="bold" />
+              )}
+              {issuingAll ? "续签中..." : "一键续签并部署"}
+            </Button>
+            <Dialog
+              open={open}
+              onOpenChange={(value) => {
+                setOpen(value);
+                if (value) {
+                  setForm(defaultForm);
+                  setError(null);
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" weight="bold" />
+                  新建 CDN 站点
                 </Button>
-                <Button onClick={handleSubmit} disabled={loading}>
-                  {loading ? "创建中..." : "创建"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>新增 CDN 站点</DialogTitle>
+                  <DialogDescription>填写 CDN 站点与证书信息。</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">站点名称</label>
+                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="如：主站" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">域名</label>
+                    <Input value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="example.com" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">证书来源</label>
+                    <Select value={form.certificateSource} onValueChange={(value) => setForm({ ...form, certificateSource: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择证书来源" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="letsencrypt">Let's Encrypt</SelectItem>
+                        <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {form.certificateSource === "letsencrypt" && (
+                      <p className="text-xs text-muted-foreground">验证方式在“域名验证”里按顶级域名统一配置。</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">CDN 平台凭据</label>
+                    <Select value={form.providerCredentialId} onValueChange={(value) => setForm({ ...form, providerCredentialId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择凭据 (可选)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {providerOptions.map((provider) => (
+                          <SelectItem key={provider.id} value={provider.id}>
+                            {provider.name} ({getPlatformLabel(provider.providerType)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>
+                    取消
+                  </Button>
+                  <Button onClick={handleSubmit} disabled={loading}>
+                    {loading ? "创建中..." : "创建"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
 
-      <Card>
+      <Card className="p-1">
         <CardHeader>
-          <CardTitle>CDN 站点列表</CardTitle>
+          <div className="section-label">Certificate Inventory</div>
+          <CardTitle className="mt-3">CDN 站点列表</CardTitle>
           <p className="text-sm text-muted-foreground">HTTPS 配置表示 CDN 平台侧该域名当前是否已启用 HTTPS。</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.4fr)_repeat(4,minmax(0,1fr))]">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -497,7 +530,7 @@ export function SitesPage() {
             </Select>
             <Button variant="outline" className="justify-between" onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}>
               <span>{sortOrder === "asc" ? "升序" : "降序"}</span>
-              <ArrowUpDown className="h-4 w-4" />
+              <ArrowsDownUp className="h-4 w-4" />
             </Button>
           </div>
 
@@ -610,7 +643,7 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell className="align-top whitespace-nowrap">
                       <div className="flex items-start gap-2">
-                        <Server className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <Database className="mt-0.5 h-3.5 w-3.5 shrink-0" weight="duotone" />
                         {site.providerType ? (
                           <div className="text-left">
                             <div className="text-xs font-medium text-foreground">{getPlatformLabel(site.providerType)}</div>
@@ -625,9 +658,9 @@ export function SitesPage() {
                       <div className="flex flex-col items-end gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleIssue(site)} disabled={isWorking}>
                           {isWorking ? (
-                            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                            <CircleNotch className="mr-1 h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+                            <ShieldCheck className="mr-1 h-3.5 w-3.5" weight="bold" />
                           )}
                           {issueState === "loading"
                             ? "续签中..."
@@ -649,7 +682,11 @@ export function SitesPage() {
           </Table>
 
           {filteredSites.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">暂无匹配的站点结果。</div>
+            <EmptyState
+              icon={<ShieldCheck className="h-6 w-6" weight="duotone" />}
+              title="暂无匹配的站点结果"
+              description="可以调整筛选条件，或者直接新增一个 CDN 站点开始接入证书管理。"
+            />
           ) : (
             <PaginationControls
               totalItems={filteredSites.length}

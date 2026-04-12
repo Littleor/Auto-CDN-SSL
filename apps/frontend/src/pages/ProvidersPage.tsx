@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Cloud, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowsClockwise, Cloud, Plus, Trash } from "@phosphor-icons/react";
+import { EmptyState } from "@/components/EmptyState";
+import { PageIntro } from "@/components/PageIntro";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -98,113 +100,127 @@ export function ProvidersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold">CDN 凭据</h2>
-          <p className="text-sm text-muted-foreground">用于同步站点并自动部署 CDN 证书。</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              新建凭据
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>新增 CDN 凭据</DialogTitle>
-              <DialogDescription>填写腾讯云或七牛云的 API Key。</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">平台类型</label>
-                <Select
-                  value={form.providerType}
-                  onValueChange={(value) => setForm({ ...form, providerType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择平台" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tencent">腾讯云 CDN</SelectItem>
-                    <SelectItem value="qiniu">七牛云 CDN</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">凭据名称</label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="如：生产环境"
-                />
-              </div>
-              {form.providerType === "tencent" ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">SecretId</label>
-                    <Input
-                      value={form.secretId}
-                      onChange={(e) => setForm({ ...form, secretId: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">SecretKey</label>
-                    <Input
-                      value={form.secretKey}
-                      onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">AccessKey</label>
-                    <Input
-                      value={form.accessKey}
-                      onChange={(e) => setForm({ ...form, accessKey: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">SecretKey</label>
-                    <Input
-                      value={form.secretKey}
-                      onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
-                    />
-                  </div>
-                </>
-              )}
-              {error && <p className="text-sm text-destructive">{error}</p>}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                取消
+      <PageIntro
+        eyebrow="CDN Credentials"
+        title="统一维护 CDN 平台凭据，站点同步和证书部署才能形成闭环"
+        description="凭据列表也重新收紧了信息层级，新增、同步和删除动作都被收进更清楚的管理界面里。"
+        stats={[
+          {
+            label: "凭据总数",
+            value: String(providers.length),
+            hint: "当前已保存的 CDN 平台凭据"
+          },
+          {
+            label: "平台范围",
+            value: "2",
+            hint: "腾讯云 CDN 与七牛云 CDN"
+          }
+        ]}
+        action={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" weight="bold" />
+                新建凭据
               </Button>
-              <Button onClick={handleSubmit} disabled={loading}>
-                {loading ? "保存中..." : "保存"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>新增 CDN 凭据</DialogTitle>
+                <DialogDescription>填写腾讯云或七牛云的 API Key。</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">平台类型</label>
+                  <Select
+                    value={form.providerType}
+                    onValueChange={(value) => setForm({ ...form, providerType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择平台" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tencent">腾讯云 CDN</SelectItem>
+                      <SelectItem value="qiniu">七牛云 CDN</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">凭据名称</label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="如：生产环境"
+                  />
+                </div>
+                {form.providerType === "tencent" ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">SecretId</label>
+                      <Input
+                        value={form.secretId}
+                        onChange={(e) => setForm({ ...form, secretId: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">SecretKey</label>
+                      <Input
+                        value={form.secretKey}
+                        onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">AccessKey</label>
+                      <Input
+                        value={form.accessKey}
+                        onChange={(e) => setForm({ ...form, accessKey: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">SecretKey</label>
+                      <Input
+                        value={form.secretKey}
+                        onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+                {error && <p className="text-sm text-destructive">{error}</p>}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  取消
+                </Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {loading ? "保存中..." : "保存"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {syncMessage && (
-        <Card>
+        <Card className="p-1">
           <CardContent className="py-3 text-sm text-muted-foreground">{syncMessage}</CardContent>
         </Card>
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {providers.map((provider) => (
-          <Card key={provider.id}>
+          <Card key={provider.id} className="p-1">
             <CardHeader className="flex-row items-center justify-between">
               <div>
+                <div className="section-label">Credential</div>
                 <CardTitle className="text-base">{provider.name}</CardTitle>
                 <p className="text-xs text-muted-foreground">
                   {providerLabels[provider.providerType] ?? provider.providerType}
                 </p>
               </div>
-              <Cloud className="h-5 w-5 text-primary" />
+              <Cloud className="h-5 w-5 text-primary" weight="duotone" />
             </CardHeader>
             <CardContent className="flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
@@ -217,23 +233,22 @@ export function ProvidersPage() {
                   onClick={() => handleSync(provider.id)}
                   disabled={syncingId === provider.id}
                 >
-                  <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                  <ArrowsClockwise className={`mr-1 h-3.5 w-3.5 ${syncingId === provider.id ? "animate-spin" : ""}`} />
                   {syncingId === provider.id ? "同步中..." : "同步站点"}
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
-                  <Trash2 className="h-4 w-4" />
+                  <Trash className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
         {providers.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-              <Cloud className="h-6 w-6" />
-              暂无平台凭据
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<Cloud className="h-6 w-6" weight="duotone" />}
+            title="暂无平台凭据"
+            description="新增一组 CDN 凭据后，系统才能同步站点并在续签完成后继续自动部署证书。"
+          />
         )}
       </div>
     </div>

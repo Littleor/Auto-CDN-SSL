@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "@phosphor-icons/react";
+import { EmptyState } from "@/components/EmptyState";
+import { PageIntro } from "@/components/PageIntro";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,29 +77,40 @@ export function DomainSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">域名验证</h2>
-        <p className="text-sm text-muted-foreground">
-          按顶级域名统一配置 HTTP-01 或 DNS-01 验证方式。
-        </p>
-      </div>
+      <PageIntro
+        eyebrow="Domain Validation"
+        title="按顶级域名维护挑战方式，避免每个站点重复做同样的配置"
+        description="这个页面现在更强调策略本身：哪些域名继承默认配置，哪些域名已经单独指定 HTTP-01 或 DNS-01，一眼就能看清。"
+        stats={[
+          {
+            label: "域名数量",
+            value: String(settings.length),
+            hint: "当前已纳入验证策略的顶级域名"
+          },
+          {
+            label: "DNS 凭据",
+            value: String(dnsOptions.length),
+            hint: "可用于 DNS-01 的腾讯云凭据"
+          }
+        ]}
+      />
 
-      <Card>
+      <Card className="p-1">
         <CardContent className="py-4 text-sm text-muted-foreground">
           DNS-01 可复用腾讯云 CDN 凭据；如需独立管理，可在「DNS 凭据」中新建。
         </CardContent>
       </Card>
 
       {settings.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-2 py-12 text-center text-sm text-muted-foreground">
-            <ShieldCheck className="h-6 w-6" />
-            暂无站点域名，请先创建网站。
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<ShieldCheck className="h-6 w-6" weight="duotone" />}
+          title="暂无站点域名"
+          description="请先创建 CDN 站点，系统才会根据域名自动整理出可配置的顶级域名验证策略。"
+        />
       ) : (
-        <Card>
+        <Card className="p-1">
           <CardHeader>
+            <div className="section-label">Validation Matrix</div>
             <CardTitle>顶级域名配置</CardTitle>
           </CardHeader>
           <CardContent>

@@ -48,13 +48,14 @@ export default {
         sm: "calc(var(--radius) - 4px)"
       },
       fontFamily: {
-        sans: ["Sora", "ui-sans-serif", "system-ui"],
-        display: ["Fraunces", "Sora", "ui-sans-serif", "system-ui"],
-        mono: ["IBM Plex Mono", "ui-monospace", "SFMono-Regular"]
+        sans: ["Outfit", "ui-sans-serif", "system-ui"],
+        display: ["Outfit", "ui-sans-serif", "system-ui"],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular"]
       },
       boxShadow: {
-        glow: "0 0 0 1px hsl(var(--ring) / 0.25), 0 18px 40px -24px hsl(var(--foreground) / 0.5)",
-        soft: "0 24px 60px -40px hsl(var(--foreground) / 0.45)"
+        glow: "0 24px 60px -40px rgba(24, 98, 67, 0.24), 0 0 0 1px rgba(24, 98, 67, 0.08)",
+        soft: "0 28px 70px -50px rgba(60, 49, 38, 0.32)",
+        diffuse: "0 40px 90px -58px rgba(60, 49, 38, 0.32)"
       },
       keyframes: {
         float: {
@@ -62,13 +63,18 @@ export default {
           "50%": { transform: "translateY(-6px)" }
         },
         shimmer: {
-          "0%": { backgroundPosition: "0% 50%" },
-          "100%": { backgroundPosition: "100% 50%" }
+          "0%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "-100% 50%" }
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "0.55", transform: "scale(1)" },
+          "50%": { opacity: "1", transform: "scale(1.06)" }
         }
       },
       animation: {
         float: "float 6s ease-in-out infinite",
-        shimmer: "shimmer 8s ease-in-out infinite"
+        shimmer: "shimmer 2.8s linear infinite",
+        "pulse-soft": "pulse-soft 2.6s ease-in-out infinite"
       }
     }
   },
