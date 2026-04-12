@@ -178,21 +178,21 @@ export function LandingPage() {
         </header>
 
         <main className="space-y-8 pt-8 md:space-y-10">
-          <section className="grid gap-8 py-6 lg:min-h-[72dvh] lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <section className="grid gap-8 py-6 lg:min-h-[72dvh] lg:grid-cols-[minmax(520px,1.08fr)_minmax(0,0.92fr)] lg:items-center">
             <motion.div
               initial={{ opacity: 0, x: -28 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="space-y-6"
+              className="max-w-[720px] space-y-6"
             >
               <div className="inline-flex items-center rounded-full border border-white/75 bg-white/72 px-3 py-1 text-[0.7rem] font-medium tracking-[0.16em] text-muted-foreground">
                 CDN SSL Platform
               </div>
               <div className="space-y-4">
-                <h1 className="max-w-3xl text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.06em] text-foreground md:text-[4.6rem]">
+                <h1 className="max-w-[14ch] text-[2.7rem] font-semibold leading-[0.98] tracking-[-0.065em] text-foreground md:text-[4.4rem]">
                   统一续签、验证和部署你的 CDN SSL
                 </h1>
-                <p className="max-w-[60ch] text-base leading-8 text-muted-foreground md:text-[17px]">
+                <p className="max-w-[64ch] text-base leading-8 text-muted-foreground md:text-[17px]">
                   Auto CDN SSL 面向 CDN 场景设计，把证书续签、域名验证、部署动作和历史记录集中到一套后台里，
                   让 HTTPS 运维从人工巡检转成可持续运行的系统流程。
                 </p>

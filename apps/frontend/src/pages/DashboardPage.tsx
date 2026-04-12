@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/api";
 import { daysUntil, formatDate } from "@/lib/format";
+import { getPlatformLabel } from "@/lib/statusDisplay";
 
 type Site = {
   id: string;
@@ -117,6 +118,18 @@ export function DashboardPage() {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
   }, [deployments]);
+
+  const siteById = useMemo(() => {
+    return new Map(
+      sites.map((site) => [
+        site.id,
+        {
+          name: site.name,
+          domain: site.domain
+        }
+      ])
+    );
+  }, [sites]);
 
   return (
     <div className="space-y-6">
@@ -297,9 +310,12 @@ export function DashboardPage() {
                         <Cloud className="h-4 w-4 text-primary" weight="duotone" />
                       </div>
                       <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium tracking-tight text-foreground">
+                          {siteById.get(item.site_id)?.domain ?? siteById.get(item.site_id)?.name ?? "未知站点"}
+                        </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <div className="text-sm font-medium tracking-tight text-foreground">
-                            {item.provider_type || "CDN 部署"}
+                          <div className="text-xs text-muted-foreground">
+                            {getPlatformLabel(item.provider_type)}
                           </div>
                           <Badge variant={item.status === "success" ? "success" : "warning"}>
                             {item.status === "success" ? "成功" : item.status}
