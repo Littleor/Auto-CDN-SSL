@@ -1,3 +1,5 @@
+import type { Tone } from "@/components/ui/chip";
+
 export function getPlatformLabel(providerType?: string | null) {
   if (!providerType) return "-";
 
@@ -24,15 +26,16 @@ export function getCertificateStatusLabel(status?: string | null) {
   return status;
 }
 
-export function getBadgeVariantByStatus(status?: string | null) {
+export function getToneByStatus(status?: string | null): Tone {
   const normalized = status?.toLowerCase();
   if (normalized === "issued" || normalized === "success" || normalized === "online" || normalized === "normal") {
-    return "success" as const;
+    return "success";
   }
-  if (normalized === "failed" || normalized === "offline" || normalized === "disabled" || normalized === "frozen") {
-    return "warning" as const;
+  if (normalized === "failed") return "danger";
+  if (normalized === "offline" || normalized === "disabled" || normalized === "frozen") {
+    return "warning";
   }
-  return "muted" as const;
+  return "neutral";
 }
 
 export function getCdnStatusLabel(status?: string | null) {
@@ -55,6 +58,9 @@ export function getHttpsStatusLabel(status?: string | null) {
   if (normalized === "on" || normalized === "https") return "已启用";
   if (normalized === "off" || normalized === "http") return "未启用";
   if (normalized === "follow") return "跟随源站";
+  if (normalized === "deployed") return "已部署";
+  if (normalized === "deploying") return "部署中";
+  if (normalized === "failed") return "失败";
   if (normalized === "enable" || normalized === "enabled") return "已启用";
   if (normalized === "disable" || normalized === "disabled") return "已停用";
   return status;
@@ -75,13 +81,7 @@ export function getHistoryTriggerLabel(triggerSource?: string | null) {
   return triggerSource;
 }
 
-export function getHistoryTriggerVariant(triggerSource?: string | null) {
+export function isScheduledTrigger(triggerSource?: string | null) {
   const normalized = triggerSource?.toLowerCase();
-  if (normalized === "scheduled_renew" || normalized === "scheduled_deploy") {
-    return "default" as const;
-  }
-  if (normalized === "manual_renew" || normalized === "manual_deploy") {
-    return "warning" as const;
-  }
-  return "muted" as const;
+  return normalized === "scheduled_renew" || normalized === "scheduled_deploy";
 }

@@ -32,3 +32,8 @@ export async function apiRequest<T>(
   }
   return data as T;
 }
+
+export function errorMessage(err: unknown, fallback = "请求失败") {
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}

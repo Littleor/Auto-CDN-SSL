@@ -1,79 +1,73 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ArrowsDownUp,
+  ArrowDown,
+  ArrowUp,
+  ArrowsClockwise,
   CircleNotch,
-  Database,
+  Check,
+  GlobeHemisphereWest,
+  ListBullets,
   MagnifyingGlass,
   Plus,
-  ShieldCheck
+  SortAscending,
+  SquaresFour,
+  Trash,
+  X
 } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 import { EmptyState } from "@/components/EmptyState";
-import { PageIntro } from "@/components/PageIntro";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Eyebrow } from "@/components/PageHeader";
 import { PaginationControls } from "@/components/PaginationControls";
-import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest } from "@/lib/api";
-import { daysUntil, formatDate } from "@/lib/format";
+import { CreateSiteDialog } from "@/components/sites/CreateSiteDialog";
+import { DeleteSitesDialog } from "@/components/sites/DeleteSitesDialog";
+import { SiteCard } from "@/components/sites/SiteCard";
+import { SiteDetailSheet } from "@/components/sites/SiteDetailSheet";
+import { SiteMenu } from "@/components/sites/SiteMenu";
+import { healthBar } from "@/components/sites/siteVisuals";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Chip, StatusPill } from "@/components/ui/chip";
 import {
-  getBadgeVariantByStatus,
-  getCdnStatusLabel,
-  getCertificateStatusLabel,
-  getHttpsStatusLabel,
-  getPlatformLabel
-} from "@/lib/statusDisplay";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Segmented } from "@/components/ui/segmented";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { apiRequest, errorMessage } from "@/lib/api";
+import { formatDay } from "@/lib/format";
+import { decorateSite, healthMeta, providerMap, type DecoratedSite, type Provider, type SiteHealth, type SiteRow } from "@/lib/sites";
+import { getCdnStatusLabel, getHttpsStatusLabel, getPlatformLabel, getToneByStatus } from "@/lib/statusDisplay";
+import { useSiteActions } from "@/lib/useSiteActions";
+import { cn } from "@/lib/utils";
 
-const defaultForm = {
-  name: "",
-  domain: "",
-  providerCredentialId: "",
-  certificateSource: "self_signed",
-  autoRenew: true,
-  renewDaysBefore: 30
+type SortField = "expiresAt" | "name" | "domain" | "provider" | "providerStatus";
+type HealthFilter = "all" | SiteHealth;
+type ViewMode = "grid" | "list";
+
+const VIEW_KEY = "auto_ssl_sites_view";
+
+const sortLabels: Record<SortField, string> = {
+  expiresAt: "到期时间",
+  domain: "域名",
+  name: "站点名称",
+  provider: "平台",
+  providerStatus: "CDN 状态"
 };
 
-type SiteRow = {
-  id: string;
-  name: string;
-  domain: string;
-  providerCredentialId: string | null;
-  providerStatus?: string | null;
-  providerHttps?: string | null;
-  providerCertExpiresAt?: string | null;
-  providerCertDeployAt?: string | null;
-  latestCertificate?: {
-    id: string;
-    expiresAt: string;
-    issuedAt: string;
-    status: string;
-  } | null;
-};
-
-type SortField = "expiresAt" | "name" | "domain" | "provider" | "providerStatus" | "certificateStatus";
-
-type DecoratedSite = SiteRow & {
-  displayExpiresAt: string | null;
-  displayIssuedAt: string | null;
-  days: number | null;
-  providerStatusRaw: string | null;
-  providerHttpsRaw: string | null;
-  certificateStatus: string | null;
-  providerType: string | null;
-  providerName: string | null;
-};
+const healthFilters: { value: HealthFilter; label: string }[] = [
+  { value: "all", label: "全部" },
+  { value: "expiring", label: "即将到期" },
+  { value: "expired", label: "已过期" },
+  { value: "healthy", label: "正常" },
+  { value: "missing", label: "无证书" }
+];
 
 function compareNullable(a: string | number | null, b: string | number | null) {
   if (a === null && b === null) return 0;
@@ -83,572 +77,463 @@ function compareNullable(a: string | number | null, b: string | number | null) {
   return String(a).localeCompare(String(b), "zh-CN");
 }
 
-function truncateText(value: string, maxLength: number) {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength)}...`;
+function readView(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "grid";
+  } catch {
+    return "grid";
+  }
 }
 
 export function SitesPage() {
   const { accessToken } = useAuth();
+  const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sites, setSites] = useState<SiteRow[]>([]);
-  const [providers, setProviders] = useState<any[]>([]);
-  const [form, setForm] = useState(defaultForm);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [issuing, setIssuing] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
-  const [deploying, setDeploying] = useState<Record<string, "idle" | "loading" | "success" | "error">>({});
-  const [issuingAll, setIssuingAll] = useState(false);
-  const [actionMessage, setActionMessage] = useState<Record<string, string>>({});
-  const [query, setQuery] = useState("");
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [healthFilter, setHealthFilter] = useState<HealthFilter>("all");
   const [providerFilter, setProviderFilter] = useState("all");
-  const [certificateFilter, setCertificateFilter] = useState("all");
   const [sortField, setSortField] = useState<SortField>("expiresAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [view, setView] = useState<ViewMode>(readView);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const jobTimers = useRef<Record<string, number>>({});
+  const [pageSize, setPageSize] = useState(24);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pendingDelete, setPendingDelete] = useState<DecoratedSite[]>([]);
+  const [deleting, setDeleting] = useState(false);
+  const [renewingAll, setRenewingAll] = useState(false);
 
-  const providerOptions = useMemo(
-    () => providers.filter((provider) => ["tencent", "qiniu"].includes(provider.providerType)),
-    [providers]
-  );
+  const detailId = searchParams.get("site");
+  const createOpen = searchParams.get("new") === "1";
 
-  const providerById = useMemo(
-    () =>
-      new Map(
-        providers.map((provider) => [
-          provider.id,
-          {
-            name: provider.name,
-            providerType: provider.providerType
-          }
-        ])
-      ),
-    [providers]
-  );
-
-  const fetchData = () => {
-    if (!accessToken) return;
-    apiRequest<SiteRow[]>("/sites", {}, accessToken).then(setSites);
-    apiRequest<any[]>("/providers", {}, accessToken).then(setProviders);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [accessToken]);
-
-  useEffect(() => {
-    return () => {
-      Object.values(jobTimers.current).forEach((timer) => clearInterval(timer));
-    };
-  }, []);
-
-  useEffect(() => {
-    setPage(1);
-  }, [query, providerFilter, certificateFilter, sortField, sortOrder, pageSize]);
-
-  const handleSubmit = async () => {
-    if (!accessToken) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await apiRequest(
-        "/sites",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: form.name,
-            domain: form.domain,
-            providerCredentialId: form.providerCredentialId || null,
-            certificateSource: form.certificateSource,
-            autoRenew: form.autoRenew,
-            renewDaysBefore: Number(form.renewDaysBefore)
-          })
+  const updateParams = useCallback(
+    (patch: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          Object.entries(patch).forEach(([key, value]) => (value === null ? next.delete(key) : next.set(key, value)));
+          return next;
         },
-        accessToken
+        { replace: true }
       );
-      setOpen(false);
-      setForm(defaultForm);
-      fetchData();
-    } catch (err: any) {
-      setError(err.message || "创建失败");
+    },
+    [setSearchParams]
+  );
+
+  const fetchData = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const [siteItems, providerItems] = await Promise.all([
+        apiRequest<SiteRow[]>("/sites", {}, accessToken),
+        apiRequest<Provider[]>("/providers", {}, accessToken)
+      ]);
+      setSites(siteItems);
+      setProviders(providerItems);
+    } catch (err) {
+      toast({ title: "加载站点失败", description: errorMessage(err), tone: "error" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, toast]);
 
-  const deploySite = async (site: DecoratedSite) => {
-    if (!accessToken || !site.providerCredentialId) {
-      setDeploying((prev) => ({ ...prev, [site.id]: "success" }));
-      setActionMessage((prev) => ({
-        ...prev,
-        [site.id]: "续签成功，未绑定 CDN 凭据，已跳过自动部署"
-      }));
-      return;
-    }
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
-    setDeploying((prev) => ({ ...prev, [site.id]: "loading" }));
-    setActionMessage((prev) => ({ ...prev, [site.id]: "证书续签成功，正在自动部署..." }));
+  const { states, renew, remove } = useSiteActions(accessToken, () => void fetchData());
+
+  useEffect(() => {
     try {
-      await apiRequest(
-        "/deployments",
-        { method: "POST", body: JSON.stringify({ siteId: site.id }) },
-        accessToken
-      );
-      setDeploying((prev) => ({ ...prev, [site.id]: "success" }));
-      setActionMessage((prev) => ({ ...prev, [site.id]: "续签并部署成功" }));
-      fetchData();
-    } catch (err: any) {
-      setDeploying((prev) => ({ ...prev, [site.id]: "error" }));
-      setActionMessage((prev) => ({
-        ...prev,
-        [site.id]: `续签成功，但自动部署失败：${err.message || "部署失败"}`
-      }));
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      // ignore
     }
-  };
+  }, [view]);
 
-  const handleIssue = async (site: DecoratedSite) => {
-    if (!accessToken) return;
-    setIssuing((prev) => ({ ...prev, [site.id]: "loading" }));
-    setDeploying((prev) => ({ ...prev, [site.id]: "idle" }));
-    setActionMessage((prev) => ({ ...prev, [site.id]: "正在续签证书..." }));
-    try {
-      const result = await apiRequest<{ jobId: string }>(
-        "/certificates/issue",
-        { method: "POST", body: JSON.stringify({ siteId: site.id }) },
-        accessToken
-      );
-      setActionMessage((prev) => ({ ...prev, [site.id]: "已提交续签任务，等待处理中..." }));
-      let completed = false;
+  useEffect(() => {
+    setPage(1);
+  }, [query, healthFilter, providerFilter, sortField, sortOrder, pageSize]);
 
-      const poll = async () => {
-        try {
-          const job = await apiRequest<{
-            id: string;
-            status: string;
-            message: string | null;
-          }>(`/jobs/${result.jobId}`, {}, accessToken);
+  const decorated = useMemo(() => {
+    const byId = providerMap(providers);
+    return sites.map((site) => decorateSite(site, byId));
+  }, [sites, providers]);
 
-          if (job.message) {
-            setActionMessage((prev) => ({ ...prev, [site.id]: truncateText(job.message || "", 80) }));
-          }
+  const healthCounts = useMemo(() => {
+    const counts: Record<HealthFilter, number> = { all: decorated.length, healthy: 0, expiring: 0, expired: 0, missing: 0 };
+    decorated.forEach((site) => (counts[site.health] += 1));
+    return counts;
+  }, [decorated]);
 
-          if (job.status === "success") {
-            completed = true;
-            setIssuing((prev) => ({ ...prev, [site.id]: "success" }));
-            clearInterval(jobTimers.current[result.jobId]);
-            delete jobTimers.current[result.jobId];
-            await deploySite(site);
-            fetchData();
-          }
-
-          if (job.status === "failed") {
-            completed = true;
-            setIssuing((prev) => ({ ...prev, [site.id]: "error" }));
-            setActionMessage((prev) => ({ ...prev, [site.id]: job.message || "续签失败" }));
-            clearInterval(jobTimers.current[result.jobId]);
-            delete jobTimers.current[result.jobId];
-          }
-        } catch (err: any) {
-          completed = true;
-          setIssuing((prev) => ({ ...prev, [site.id]: "error" }));
-          setActionMessage((prev) => ({ ...prev, [site.id]: err.message || "续签失败" }));
-          clearInterval(jobTimers.current[result.jobId]);
-          delete jobTimers.current[result.jobId];
-        }
-      };
-
-      await poll();
-      if (!completed) {
-        jobTimers.current[result.jobId] = window.setInterval(() => {
-          void poll();
-        }, 2000);
-      }
-    } catch (err: any) {
-      setIssuing((prev) => ({ ...prev, [site.id]: "error" }));
-      setActionMessage((prev) => ({ ...prev, [site.id]: err.message || "续签失败" }));
-    }
-  };
-
-  const decoratedSites = useMemo<DecoratedSite[]>(() => {
-    return sites.map((site) => {
-      const providerInfo = site.providerCredentialId ? providerById.get(site.providerCredentialId) : null;
-      const displayExpiresAt = site.latestCertificate?.expiresAt ?? site.providerCertExpiresAt ?? null;
-      const displayIssuedAt = site.latestCertificate?.issuedAt ?? site.providerCertDeployAt ?? null;
-      const certificateStatus = site.latestCertificate?.status ?? (displayExpiresAt ? "issued" : null);
-
-      return {
-        ...site,
-        displayExpiresAt,
-        displayIssuedAt,
-        days: daysUntil(displayExpiresAt),
-        providerStatusRaw: site.providerStatus ?? null,
-        providerHttpsRaw: site.providerHttps ?? null,
-        certificateStatus,
-        providerType: providerInfo?.providerType ?? null,
-        providerName: providerInfo?.name ?? null
-      };
-    });
-  }, [sites, providerById]);
-
-  const filteredSites = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    const result = decoratedSites.filter((site) => {
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = decorated.filter((site) => {
       const matchesQuery =
-        !normalizedQuery ||
-        site.name.toLowerCase().includes(normalizedQuery) ||
-        site.domain.toLowerCase().includes(normalizedQuery) ||
-        (site.providerName ?? "").toLowerCase().includes(normalizedQuery);
-
+        !q ||
+        site.name.toLowerCase().includes(q) ||
+        site.domain.toLowerCase().includes(q) ||
+        (site.providerName ?? "").toLowerCase().includes(q);
+      const matchesHealth = healthFilter === "all" || site.health === healthFilter;
       const matchesProvider =
         providerFilter === "all" ||
         (providerFilter === "unbound" && !site.providerType) ||
         site.providerType === providerFilter;
-
-      const matchesCertificate =
-        certificateFilter === "all" ||
-        (certificateFilter === "expiring" && site.days !== null && site.days <= 30) ||
-        (certificateFilter === "expired" && site.days !== null && site.days < 0) ||
-        (certificateFilter === "healthy" && site.days !== null && site.days > 30) ||
-        (certificateFilter === "missing" && !site.displayExpiresAt);
-
-      return matchesQuery && matchesProvider && matchesCertificate;
+      return matchesQuery && matchesHealth && matchesProvider;
     });
-
-    return result.sort((a, b) => {
-      const direction = sortOrder === "asc" ? 1 : -1;
+    const direction = sortOrder === "asc" ? 1 : -1;
+    return list.sort((a, b) => {
       if (sortField === "name") return compareNullable(a.name, b.name) * direction;
       if (sortField === "domain") return compareNullable(a.domain, b.domain) * direction;
-      if (sortField === "provider") {
-        return compareNullable(getPlatformLabel(a.providerType), getPlatformLabel(b.providerType)) * direction;
-      }
-      if (sortField === "providerStatus") {
-        return compareNullable(getCdnStatusLabel(a.providerStatusRaw), getCdnStatusLabel(b.providerStatusRaw)) * direction;
-      }
-      if (sortField === "certificateStatus") {
-        return compareNullable(
-          getCertificateStatusLabel(a.certificateStatus),
-          getCertificateStatusLabel(b.certificateStatus)
-        ) * direction;
-      }
-      return compareNullable(
-        a.displayExpiresAt ? new Date(a.displayExpiresAt).getTime() : null,
-        b.displayExpiresAt ? new Date(b.displayExpiresAt).getTime() : null
-      ) * direction;
+      if (sortField === "provider") return compareNullable(a.providerType, b.providerType) * direction;
+      if (sortField === "providerStatus") return compareNullable(a.providerStatus ?? null, b.providerStatus ?? null) * direction;
+      return compareNullable(a.days, b.days) * direction;
     });
-  }, [certificateFilter, decoratedSites, providerFilter, query, sortField, sortOrder]);
+  }, [decorated, healthFilter, providerFilter, query, sortField, sortOrder]);
 
-  const pagedSites = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredSites.slice(start, start + pageSize);
-  }, [filteredSites, page, pageSize]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filteredSites.length / pageSize));
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [filteredSites.length, page, pageSize]);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if (page > totalPages) setPage(totalPages);
+  }, [filtered.length, page, pageSize]);
 
-  const handleIssueAll = async () => {
-    if (!accessToken || filteredSites.length === 0) return;
-    setIssuingAll(true);
+  // Drop selections that no longer exist (e.g. after a delete or refresh).
+  useEffect(() => {
+    setSelected((prev) => {
+      const ids = new Set(sites.map((site) => site.id));
+      const next = new Set([...prev].filter((id) => ids.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [sites]);
+
+  const detailSite = useMemo(() => decorated.find((site) => site.id === detailId) ?? null, [decorated, detailId]);
+  const selectedSites = useMemo(() => decorated.filter((site) => selected.has(site.id)), [decorated, selected]);
+  const selecting = selected.size > 0;
+  const pageAllSelected = paged.length > 0 && paged.every((site) => selected.has(site.id));
+  const pageSomeSelected = paged.some((site) => selected.has(site.id));
+
+  const toggle = (id: string, on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  const togglePage = (on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      paged.forEach((site) => (on ? next.add(site.id) : next.delete(site.id)));
+      return next;
+    });
+
+  const renewMany = async (targets: DecoratedSite[]) => {
+    if (targets.length === 0) return;
+    setRenewingAll(true);
+    toast({ title: `已开始续签 ${targets.length} 个站点`, description: "完成后会自动部署到绑定的 CDN。" });
     try {
-      await Promise.all(filteredSites.map((site) => handleIssue(site)));
+      await Promise.all(targets.map((site) => renew(site)));
     } finally {
-      setIssuingAll(false);
+      setRenewingAll(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <PageIntro
-        title="CDN 站点"
-        description="管理站点、证书状态和部署动作。"
-        action={
-          <>
-            <Button variant="secondary" onClick={handleIssueAll} disabled={issuingAll || filteredSites.length === 0}>
-              {issuingAll ? (
-                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ShieldCheck className="mr-2 h-4 w-4" weight="bold" />
-              )}
-              {issuingAll ? "续签中..." : "一键续签并部署"}
-            </Button>
-            <Dialog
-              open={open}
-              onOpenChange={(value) => {
-                setOpen(value);
-                if (value) {
-                  setForm(defaultForm);
-                  setError(null);
-                }
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" weight="bold" />
-                  新建 CDN 站点
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>新增 CDN 站点</DialogTitle>
-                  <DialogDescription>填写 CDN 站点与证书信息。</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">站点名称</label>
-                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="如：主站" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">域名</label>
-                    <Input value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="example.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">证书来源</label>
-                    <Select value={form.certificateSource} onValueChange={(value) => setForm({ ...form, certificateSource: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择证书来源" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="letsencrypt">Let's Encrypt</SelectItem>
-                        <SelectItem value="self_signed">自签证书 (开发环境)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.certificateSource === "letsencrypt" && (
-                      <p className="text-xs text-muted-foreground">验证方式在“域名验证”里按顶级域名统一配置。</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">CDN 平台凭据</label>
-                    <Select value={form.providerCredentialId} onValueChange={(value) => setForm({ ...form, providerCredentialId: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择凭据 (可选)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {providerOptions.map((provider) => (
-                          <SelectItem key={provider.id} value={provider.id}>
-                            {provider.name} ({getPlatformLabel(provider.providerType)})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {error && <p className="text-sm text-destructive">{error}</p>}
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpen(false)}>
-                    取消
-                  </Button>
-                  <Button onClick={handleSubmit} disabled={loading}>
-                    {loading ? "创建中..." : "创建"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </>
-        }
-      />
+  const confirmDelete = async () => {
+    const targets = pendingDelete;
+    setDeleting(true);
+    const { deleted, failed } = await remove(targets.map((site) => site.id));
+    setDeleting(false);
+    setPendingDelete([]);
+    if (targets.some((site) => site.id === detailId)) updateParams({ site: null });
+    setSelected(new Set());
+    if (failed > 0) {
+      toast({ title: `${failed} 个站点删除失败`, description: deleted ? `已删除 ${deleted} 个` : undefined, tone: "error" });
+    } else {
+      toast({
+        title: targets.length === 1 ? `已删除 ${targets[0].domain}` : `已删除 ${deleted} 个站点`,
+        tone: "success"
+      });
+    }
+  };
 
-      <Card className="p-1">
-        <CardHeader>
-          <CardTitle>站点列表</CardTitle>
-          <p className="text-sm text-muted-foreground">HTTPS 配置表示 CDN 平台侧该域名当前是否已启用 HTTPS。</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.4fr)_repeat(4,minmax(0,1fr))]">
-            <div className="relative">
-              <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-10"
-                placeholder="搜索站点、域名、凭据名"
-              />
-            </div>
-            <Select value={providerFilter} onValueChange={setProviderFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="服务商筛选" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部服务商</SelectItem>
-                <SelectItem value="tencent">腾讯云 CDN</SelectItem>
-                <SelectItem value="qiniu">七牛云 CDN</SelectItem>
-                <SelectItem value="unbound">未绑定平台</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={certificateFilter} onValueChange={setCertificateFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="证书状态筛选" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部证书状态</SelectItem>
-                <SelectItem value="healthy">正常</SelectItem>
-                <SelectItem value="expiring">30 天内到期</SelectItem>
-                <SelectItem value="expired">已过期</SelectItem>
-                <SelectItem value="missing">无证书</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
-              <SelectTrigger>
-                <SelectValue placeholder="排序字段" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="expiresAt">按到期时间</SelectItem>
-                <SelectItem value="name">按站点名称</SelectItem>
-                <SelectItem value="domain">按域名</SelectItem>
-                <SelectItem value="provider">按服务商</SelectItem>
-                <SelectItem value="providerStatus">按 CDN 状态</SelectItem>
-                <SelectItem value="certificateStatus">按证书状态</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" className="justify-between" onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}>
-              <span>{sortOrder === "asc" ? "升序" : "降序"}</span>
-              <ArrowsDownUp className="h-4 w-4" />
-            </Button>
+  const filtersActive = query || healthFilter !== "all" || providerFilter !== "all";
+
+  return (
+    <div>
+      {/* Hero */}
+      <section className="flex flex-col items-center pb-6 pt-6 text-center md:pb-8 md:pt-10">
+        <Eyebrow>
+          {loading ? "正在加载站点" : `${decorated.length} 个站点在管理中`}
+        </Eyebrow>
+        <h1 className="mt-4 text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.03em] md:text-[2.25rem]">
+          你的 CDN 站点
+        </h1>
+        <p className="mt-4 max-w-[46ch] text-sm leading-6 text-muted-foreground">
+          每张卡片是一个加速域名，<span className="text-foreground">剩余天数</span>一眼可见，
+          <br className="hidden sm:block" />
+          续签与部署只需<span className="text-foreground">一次点击</span>。
+        </p>
+        <form
+          className="relative mt-5 w-full max-w-[560px]"
+          onSubmit={(event) => {
+            event.preventDefault();
+            document.getElementById("site-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        >
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="搜索域名、站点名或凭据，例如 static.example.com"
+            className="h-11 w-full rounded-full bg-secondary pl-5 pr-12 text-sm text-foreground transition-colors placeholder:text-muted-foreground hover:bg-accent/70 focus:bg-accent/70 focus:outline-none"
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-11 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-background"
+              aria-label="清空搜索"
+            >
+              <X className="h-4 w-4" weight="bold" />
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95"
+            aria-label="查看结果"
+          >
+            <MagnifyingGlass className="h-4 w-4" weight="bold" />
+          </button>
+        </form>
+      </section>
+
+      {/* Toolbar */}
+      <div id="site-results" className="sticky top-14 z-30 -mx-4 scroll-mt-14 bg-background/85 px-4 py-3 backdrop-blur-xl md:-mx-6 md:px-6">
+        <div className="flex items-center gap-3">
+          <div className="no-scrollbar fade-x flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pr-8">
+            {healthFilters.map((item) => (
+              <Chip
+                key={item.value}
+                active={healthFilter === item.value}
+                count={healthCounts[item.value]}
+                onClick={() => setHealthFilter(item.value)}
+              >
+                {item.label}
+              </Chip>
+            ))}
+            <span className="mx-1 h-6 w-px shrink-0 bg-border" />
+            {[
+              { value: "all", label: "全部平台" },
+              { value: "tencent", label: "腾讯云" },
+              { value: "qiniu", label: "七牛云" },
+              { value: "unbound", label: "未绑定" }
+            ].map((item) => (
+              <Chip key={item.value} active={providerFilter === item.value} onClick={() => setProviderFilter(item.value)}>
+                {item.label}
+              </Chip>
+            ))}
           </div>
 
-          <Table className="min-w-[1220px] table-auto">
+          <div className="hidden shrink-0 text-sm tabular-nums text-muted-foreground xl:block">{filtered.length} 个站点</div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" className="shrink-0 px-4" aria-label="排序">
+                <SortAscending className="h-4 w-4" />
+                <span className="hidden sm:inline">{sortLabels[sortField]}</span>
+                {sortOrder === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>排序依据</DropdownMenuLabel>
+              {(Object.keys(sortLabels) as SortField[]).map((field) => (
+                <DropdownMenuItem key={field} onSelect={() => setSortField(field)}>
+                  <span className="flex-1">{sortLabels[field]}</span>
+                  {sortField === field && <Check weight="bold" />}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}>
+                {sortOrder === "asc" ? <ArrowDown /> : <ArrowUp />}
+                {sortOrder === "asc" ? "切换为降序" : "切换为升序"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Segmented
+            ariaLabel="视图"
+            value={view}
+            onChange={setView}
+            className="hidden sm:inline-flex"
+            options={[
+              { value: "grid", label: <SquaresFour className="h-4 w-4" weight="fill" />, title: "卡片视图" },
+              { value: "list", label: <ListBullets className="h-4 w-4" weight="bold" />, title: "列表视图" }
+            ]}
+          />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="shrink-0 px-4 sm:px-5">
+                <Plus className="h-4 w-4" weight="bold" />
+                <span className="hidden sm:inline">站点</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuItem onSelect={() => updateParams({ new: "1" })}>
+                <Plus />
+                新建站点
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void renewMany(filtered)} disabled={renewingAll || filtered.length === 0}>
+                <ArrowsClockwise />
+                续签当前筛选的 {filtered.length} 个站点
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="pt-6">
+        {loading ? (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-x-4 gap-y-5">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index}>
+                <div className="skeleton h-[148px] rounded-2xl" />
+                <div className="skeleton mt-4 h-4 w-2/3 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={<GlobeHemisphereWest />}
+            title={filtersActive ? "没有匹配的站点" : "还没有站点"}
+            description={
+              filtersActive
+                ? "换个关键词，或清除筛选条件再看看。"
+                : "新建一个站点，或在「CDN 凭据」中同步已有的加速域名。"
+            }
+            action={
+              filtersActive ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setQuery("");
+                    setHealthFilter("all");
+                    setProviderFilter("all");
+                  }}
+                >
+                  清除筛选
+                </Button>
+              ) : (
+                <Button onClick={() => updateParams({ new: "1" })}>
+                  <Plus className="h-4 w-4" weight="bold" />
+                  新建站点
+                </Button>
+              )
+            }
+          />
+        ) : view === "grid" ? (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-x-4 gap-y-5">
+            {paged.map((site) => (
+              <SiteCard
+                key={site.id}
+                site={site}
+                action={states[site.id]}
+                selected={selected.has(site.id)}
+                selecting={selecting}
+                onToggleSelect={(on) => toggle(site.id, on)}
+                onOpen={() => updateParams({ site: site.id })}
+                onRenew={() => void renew(site)}
+                onDelete={() => setPendingDelete([site])}
+              />
+            ))}
+          </div>
+        ) : (
+          <Table className="min-w-[980px]">
             <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[220px]">站点</TableHead>
-                <TableHead className="min-w-[120px] whitespace-nowrap">证书状态</TableHead>
-                <TableHead className="min-w-[170px] whitespace-nowrap">到期时间</TableHead>
-                <TableHead className="min-w-[160px] whitespace-nowrap">有效期进度</TableHead>
-                <TableHead className="min-w-[120px] whitespace-nowrap">CDN 状态</TableHead>
-                <TableHead className="min-w-[140px] whitespace-nowrap">HTTPS 配置（CDN侧）</TableHead>
-                <TableHead className="min-w-[170px] whitespace-nowrap">平台</TableHead>
-                <TableHead className="min-w-[220px] text-right whitespace-nowrap">操作</TableHead>
+              <TableRow className="[&>td]:hover:bg-transparent">
+                <TableHead className="w-12 pl-3">
+                  <Checkbox
+                    checked={pageAllSelected}
+                    indeterminate={!pageAllSelected && pageSomeSelected}
+                    onChange={togglePage}
+                    label="选择本页全部站点"
+                  />
+                </TableHead>
+                <TableHead>站点</TableHead>
+                <TableHead>证书</TableHead>
+                <TableHead>剩余有效期</TableHead>
+                <TableHead>CDN 状态</TableHead>
+                <TableHead>HTTPS</TableHead>
+                <TableHead>平台</TableHead>
+                <TableHead className="w-[150px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pagedSites.map((site) => {
-                const hasRange = Boolean(site.displayIssuedAt && site.displayExpiresAt);
-                const totalDays = hasRange
-                  ? Math.max(
-                      1,
-                      Math.ceil(
-                        (new Date(site.displayExpiresAt!).getTime() - new Date(site.displayIssuedAt!).getTime()) /
-                          (24 * 60 * 60 * 1000)
-                      )
-                    )
-                  : null;
-                const remainingDays = hasRange
-                  ? Math.ceil((new Date(site.displayExpiresAt!).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
-                  : null;
-                const normalizedRemaining = remainingDays !== null ? Math.max(0, remainingDays) : null;
-                const ratioText =
-                  hasRange && normalizedRemaining !== null && totalDays
-                    ? remainingDays !== null && remainingDays < 0
-                      ? "已过期"
-                      : `${normalizedRemaining}/${totalDays} 天`
-                    : "-";
-                const progress = hasRange
-                  ? Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        ((new Date(site.displayExpiresAt!).getTime() - Date.now()) /
-                          (new Date(site.displayExpiresAt!).getTime() - new Date(site.displayIssuedAt!).getTime())) *
-                          100
-                      )
-                    )
-                  : 0;
-                const isOverdue = remainingDays !== null && remainingDays < 0;
-                const isCritical = remainingDays !== null && remainingDays <= 30;
-                const isWarning = remainingDays !== null && remainingDays <= 60;
-                const progressTone = isOverdue || isCritical ? "bg-destructive" : isWarning ? "bg-amber-500" : "bg-emerald-500";
-                const progressTextTone =
-                  isOverdue || isCritical ? "text-destructive" : isWarning ? "text-amber-600" : "text-emerald-600";
-                const issueState = issuing[site.id] ?? "idle";
-                const deployState = deploying[site.id] ?? "idle";
-                const isWorking = issueState === "loading" || deployState === "loading";
-                const isErrored = issueState === "error" || deployState === "error";
-                const isSuccessful = !isWorking && (issueState === "success" || deployState === "success");
-                const messageClass = isErrored
-                  ? "text-destructive"
-                  : isSuccessful
-                    ? "text-emerald-600"
-                    : "text-muted-foreground";
-
+              {paged.map((site) => {
+                const action = states[site.id];
+                const busy = action?.phase === "issuing" || action?.phase === "deploying";
                 return (
-                  <TableRow key={site.id}>
-                    <TableCell className="align-top">
-                      <div className="space-y-1">
-                        <p className="font-semibold">{site.name}</p>
-                        <p className="text-xs text-muted-foreground">{site.domain}</p>
-                      </div>
+                  <TableRow key={site.id} className="cursor-pointer" onClick={() => updateParams({ site: site.id })}>
+                    <TableCell className="pl-3">
+                      <Checkbox checked={selected.has(site.id)} onChange={(on) => toggle(site.id, on)} label={`选择 ${site.domain}`} />
                     </TableCell>
-                    <TableCell className="align-top whitespace-nowrap">
-                      {site.certificateStatus ? (
-                        <Badge variant={site.days !== null && site.days <= 30 ? "warning" : "success"}>
-                          {getCertificateStatusLabel(site.certificateStatus)}
-                        </Badge>
-                      ) : (
-                        <Badge variant="muted">未签发</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="align-top whitespace-nowrap">
-                      {site.displayExpiresAt ? formatDate(site.displayExpiresAt) : "-"}
-                    </TableCell>
-                    <TableCell className="align-top">
-                      {hasRange ? (
-                        <div className="flex min-w-[120px] flex-col gap-1">
-                          <div className="h-1.5 w-full rounded-full bg-muted/70">
-                            <div className={`h-1.5 rounded-full transition-all ${progressTone}`} style={{ width: `${progress}%` }} />
-                          </div>
-                          <span className={`font-mono text-[11px] ${progressTextTone}`}>{ratioText}</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="align-top whitespace-nowrap">
-                      {site.providerStatusRaw ? (
-                        <Badge variant={getBadgeVariantByStatus(site.providerStatusRaw)}>
-                          {getCdnStatusLabel(site.providerStatusRaw)}
-                        </Badge>
-                      ) : (
-                        <Badge variant="muted">-</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="align-top text-xs text-muted-foreground whitespace-nowrap">
-                      {getHttpsStatusLabel(site.providerHttpsRaw)}
-                    </TableCell>
-                    <TableCell className="align-top whitespace-nowrap">
-                      <div className="flex items-start gap-2">
-                        <Database className="mt-0.5 h-3.5 w-3.5 shrink-0" weight="duotone" />
-                        {site.providerType ? (
-                          <div className="text-left">
-                            <div className="text-xs font-medium text-foreground">{getPlatformLabel(site.providerType)}</div>
-                            <div className="text-[11px] text-muted-foreground">{site.providerName}</div>
-                          </div>
+                    <TableCell className="max-w-[320px]">
+                      <div className="truncate font-medium text-foreground">{site.domain}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {action?.message ? (
+                          <span className={cn(action.phase === "error" ? "text-destructive" : action.phase === "success" ? "text-success" : "")}>
+                            {action.message}
+                          </span>
+                        ) : site.name !== site.domain ? (
+                          site.name
                         ) : (
-                          <span className="text-xs text-muted-foreground">未绑定</span>
+                          site.expiresAt ? `${formatDay(site.expiresAt)} 到期` : "尚未签发证书"
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="align-top text-right">
-                      <div className="flex flex-col items-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleIssue(site)} disabled={isWorking}>
-                          {isWorking ? (
-                            <CircleNotch className="mr-1 h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <ShieldCheck className="mr-1 h-3.5 w-3.5" weight="bold" />
-                          )}
-                          {issueState === "loading"
-                            ? "续签中..."
-                            : deployState === "loading"
-                              ? "部署中..."
-                              : "续签"}
+                    <TableCell>
+                      <StatusPill tone={healthMeta[site.health].tone}>{healthMeta[site.health].label}</StatusPill>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex w-[160px] items-center gap-3">
+                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-secondary">
+                          <div
+                            className={cn("h-full rounded-full", healthBar[site.health])}
+                            style={{ width: `${site.progress ?? (site.health === "expired" ? 100 : 0)}%` }}
+                          />
+                        </div>
+                        <span className="w-14 text-right text-xs tabular-nums text-muted-foreground">
+                          {site.days === null ? "—" : site.days < 0 ? "已过期" : `${site.days} 天`}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {site.providerStatus ? (
+                        <StatusPill tone={getToneByStatus(site.providerStatus)}>{getCdnStatusLabel(site.providerStatus)}</StatusPill>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{getHttpsStatusLabel(site.providerHttps)}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="text-foreground">{site.providerType ? getPlatformLabel(site.providerType) : "未绑定"}</div>
+                      {site.providerName && <div className="text-xs text-muted-foreground">{site.providerName}</div>}
+                    </TableCell>
+                    <TableCell className="pr-3" onClick={(event) => event.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button size="sm" variant="secondary" onClick={() => void renew(site)} disabled={busy}>
+                          {busy ? <CircleNotch className="h-4 w-4 animate-spin" /> : <ArrowsClockwise className="h-4 w-4" />}
+                          {action?.phase === "issuing" ? "续签中" : action?.phase === "deploying" ? "部署中" : "续签"}
                         </Button>
-                        {actionMessage[site.id] && (
-                          <div title={actionMessage[site.id]} className={`max-w-[180px] truncate text-right text-xs ${messageClass}`}>
-                            {truncateText(actionMessage[site.id], 32)}
-                          </div>
-                        )}
+                        <SiteMenu
+                          className="bg-secondary shadow-none hover:bg-accent"
+                          busy={busy}
+                          onOpen={() => updateParams({ site: site.id })}
+                          onRenew={() => void renew(site)}
+                          onDelete={() => setPendingDelete([site])}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -656,24 +541,91 @@ export function SitesPage() {
               })}
             </TableBody>
           </Table>
+        )}
 
-          {filteredSites.length === 0 ? (
-            <EmptyState
-              icon={<ShieldCheck className="h-6 w-6" weight="duotone" />}
-              title="暂无匹配的站点结果"
-              description="可以调整筛选条件，或者直接新增一个 CDN 站点开始接入证书管理。"
-            />
-          ) : (
-            <PaginationControls
-              totalItems={filteredSites.length}
-              page={page}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-            />
-          )}
-        </CardContent>
-      </Card>
+        {!loading && filtered.length > 0 && (
+          <PaginationControls
+            totalItems={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
+      </div>
+
+      {/* Selection bar */}
+      <AnimatePresence>
+        {selecting && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 24, x: "-50%" }}
+            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            className="fixed bottom-6 left-1/2 z-40 flex max-w-[calc(100%-2rem)] items-center gap-1 rounded-full bg-primary p-1.5 pl-5 text-primary-foreground shadow-float"
+          >
+            <span className="whitespace-nowrap pr-2 text-sm font-medium tabular-nums">已选 {selected.size} 个</span>
+            <button
+              type="button"
+              onClick={() => togglePage(!pageAllSelected)}
+              className="hidden h-10 whitespace-nowrap rounded-full px-4 text-sm font-medium opacity-80 transition hover:bg-primary-foreground/10 hover:opacity-100 sm:block"
+            >
+              {pageAllSelected ? "取消本页" : "全选本页"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void renewMany(selectedSites)}
+              disabled={renewingAll}
+              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-sm font-medium transition hover:bg-primary-foreground/10 disabled:opacity-50"
+            >
+              <ArrowsClockwise className="h-4 w-4" />
+              续签
+            </button>
+            <button
+              type="button"
+              onClick={() => setPendingDelete(selectedSites)}
+              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full bg-destructive px-4 text-sm font-medium text-destructive-foreground transition hover:bg-destructive/90"
+            >
+              <Trash className="h-4 w-4" />
+              删除
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-primary-foreground/10"
+              aria-label="取消选择"
+            >
+              <X className="h-4 w-4" weight="bold" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <SiteDetailSheet
+        site={detailSite}
+        action={detailSite ? states[detailSite.id] : undefined}
+        onOpenChange={(open) => !open && updateParams({ site: null })}
+        onRenew={(site) => void renew(site)}
+        onDelete={(site) => setPendingDelete([site])}
+      />
+
+      <CreateSiteDialog
+        open={createOpen}
+        onOpenChange={(open) => updateParams({ new: open ? "1" : null })}
+        providers={providers}
+        accessToken={accessToken}
+        onCreated={(domain) => {
+          toast({ title: `已添加 ${domain}`, tone: "success" });
+          void fetchData();
+        }}
+      />
+
+      <DeleteSitesDialog
+        sites={pendingDelete}
+        loading={deleting}
+        onOpenChange={(open) => !open && setPendingDelete([])}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }

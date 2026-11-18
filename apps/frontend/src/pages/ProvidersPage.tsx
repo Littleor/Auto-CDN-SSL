@@ -1,242 +1,148 @@
-import { useEffect, useState } from "react";
-import { ArrowsClockwise, Cloud, Plus, Trash } from "@phosphor-icons/react";
-import { EmptyState } from "@/components/EmptyState";
-import { PageIntro } from "@/components/PageIntro";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowsClockwise, CircleNotch, Plus } from "@phosphor-icons/react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { PageHeader } from "@/components/PageHeader";
+import { AddCard, CredentialCard } from "@/components/credentials/CredentialCard";
+import { CredentialDialog } from "@/components/credentials/CredentialDialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest } from "@/lib/api";
-
-const initialForm = {
-  providerType: "tencent",
-  name: "",
-  secretId: "",
-  secretKey: "",
-  accessKey: ""
-};
-
-const providerLabels: Record<string, string> = {
-  tencent: "腾讯云 CDN",
-  qiniu: "七牛云 CDN"
-};
+import { useToast } from "@/contexts/ToastContext";
+import { apiRequest, errorMessage } from "@/lib/api";
+import type { Provider } from "@/lib/sites";
+import { getPlatformLabel } from "@/lib/statusDisplay";
 
 export function ProvidersPage() {
   const { accessToken } = useAuth();
-  const [providers, setProviders] = useState<any[]>([]);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(initialForm);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
   const [syncingId, setSyncingId] = useState<string | null>(null);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Provider | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const fetchProviders = () => {
+  const cdnProviders = useMemo(
+    () => providers.filter((provider) => ["tencent", "qiniu"].includes(provider.providerType)),
+    [providers]
+  );
+
+  const fetchProviders = useCallback(() => {
     if (!accessToken) return;
-    apiRequest<any[]>("/providers", {}, accessToken).then(setProviders);
-  };
+    apiRequest<Provider[]>("/providers", {}, accessToken)
+      .then(setProviders)
+      .catch((err: unknown) => toast({ title: "加载凭据失败", description: errorMessage(err), tone: "error" }))
+      .finally(() => setLoading(false));
+  }, [accessToken, toast]);
 
-  useEffect(() => {
-    fetchProviders();
-  }, [accessToken]);
+  useEffect(() => fetchProviders(), [fetchProviders]);
 
-  const handleSubmit = async () => {
+  const sync = async (provider: Provider) => {
     if (!accessToken) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const config =
-        form.providerType === "tencent"
-          ? { secretId: form.secretId, secretKey: form.secretKey }
-          : { accessKey: form.accessKey, secretKey: form.secretKey };
-
-      await apiRequest(
-        "/providers",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            providerType: form.providerType,
-            name: form.name,
-            config
-          })
-        },
-        accessToken
-      );
-      setOpen(false);
-      setForm(initialForm);
-      fetchProviders();
-    } catch (err: any) {
-      setError(err.message || "创建失败");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!accessToken) return;
-    await apiRequest(`/providers/${id}`, { method: "DELETE" }, accessToken);
-    fetchProviders();
-  };
-
-  const handleSync = async (id: string) => {
-    if (!accessToken) return;
-    setSyncingId(id);
-    setSyncMessage(null);
+    setSyncingId(provider.id);
     try {
       const result = await apiRequest<{ total: number; created: number; updated: number }>(
-        `/providers/${id}/sync`,
+        `/providers/${provider.id}/sync`,
         { method: "POST" },
         accessToken
       );
-      setSyncMessage(`同步完成：新增 ${result.created}，更新 ${result.updated}（共 ${result.total}）`);
-    } catch (err: any) {
-      setSyncMessage(err.message || "同步失败");
+      toast({
+        title: `${provider.name} 同步完成`,
+        description: `共 ${result.total} 个域名：新增 ${result.created}，更新 ${result.updated}`,
+        tone: "success"
+      });
+    } catch (err) {
+      toast({ title: "同步失败", description: errorMessage(err), tone: "error" });
     } finally {
       setSyncingId(null);
     }
   };
 
+  const confirmDelete = async () => {
+    if (!accessToken || !pendingDelete) return;
+    setDeleting(true);
+    try {
+      await apiRequest(`/providers/${pendingDelete.id}`, { method: "DELETE" }, accessToken);
+      toast({ title: `已删除 ${pendingDelete.name}`, tone: "success" });
+      setPendingDelete(null);
+      fetchProviders();
+    } catch (err) {
+      toast({ title: "删除失败", description: errorMessage(err), tone: "error" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <PageIntro
+    <div>
+      <PageHeader
         title="CDN 凭据"
-        description="管理用于同步站点和部署证书的平台凭据。"
+        description="用于同步加速域名、并在续签后把证书部署到 CDN。腾讯云凭据也可直接用于 DNS-01 验证。"
         action={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" weight="bold" />
-                新建凭据
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>新增 CDN 凭据</DialogTitle>
-                <DialogDescription>填写腾讯云或七牛云的 API Key。</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">平台类型</label>
-                  <Select
-                    value={form.providerType}
-                    onValueChange={(value) => setForm({ ...form, providerType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择平台" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tencent">腾讯云 CDN</SelectItem>
-                      <SelectItem value="qiniu">七牛云 CDN</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">凭据名称</label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="如：生产环境"
-                  />
-                </div>
-                {form.providerType === "tencent" ? (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">SecretId</label>
-                      <Input
-                        value={form.secretId}
-                        onChange={(e) => setForm({ ...form, secretId: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">SecretKey</label>
-                      <Input
-                        value={form.secretKey}
-                        onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">AccessKey</label>
-                      <Input
-                        value={form.accessKey}
-                        onChange={(e) => setForm({ ...form, accessKey: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">SecretKey</label>
-                      <Input
-                        value={form.secretKey}
-                        onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
-                      />
-                    </div>
-                  </>
-                )}
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  取消
-                </Button>
-                <Button onClick={handleSubmit} disabled={loading}>
-                  {loading ? "保存中..." : "保存"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" weight="bold" />
+            新建凭据
+          </Button>
         }
       />
 
-      {syncMessage && (
-        <Card className="p-1">
-          <CardContent className="py-3 text-sm text-muted-foreground">{syncMessage}</CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {providers.map((provider) => (
-          <Card key={provider.id} className="p-1">
-            <CardHeader className="flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base">{provider.name}</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {providerLabels[provider.providerType] ?? provider.providerType}
-                </p>
-              </div>
-              <Cloud className="h-5 w-5 text-primary" weight="duotone" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
-                创建时间：{new Date(provider.createdAt).toLocaleDateString("zh-CN")}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSync(provider.id)}
-                  disabled={syncingId === provider.id}
-                >
-                  <ArrowsClockwise className={`mr-1 h-3.5 w-3.5 ${syncingId === provider.id ? "animate-spin" : ""}`} />
-                  {syncingId === provider.id ? "同步中..." : "同步站点"}
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {providers.length === 0 && (
-          <EmptyState
-            icon={<Cloud className="h-6 w-6" weight="duotone" />}
-            title="暂无平台凭据"
-            description="新增一组 CDN 凭据后，系统才能同步站点并在续签完成后继续自动部署证书。"
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-x-4 gap-y-5">
+        {loading
+          ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton aspect-[16/9] rounded-2xl" />)
+          : cdnProviders.map((provider) => (
+              <CredentialCard
+                key={provider.id}
+                name={provider.name}
+                providerType={provider.providerType}
+                typeLabel={getPlatformLabel(provider.providerType)}
+                createdAt={provider.createdAt}
+                onDelete={() => setPendingDelete(provider)}
+                actions={
+                  <button
+                    type="button"
+                    onClick={() => void sync(provider)}
+                    disabled={syncingId === provider.id}
+                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground transition-transform active:scale-95 disabled:opacity-80"
+                  >
+                    {syncingId === provider.id ? (
+                      <CircleNotch className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ArrowsClockwise className="h-4 w-4" weight="bold" />
+                    )}
+                    {syncingId === provider.id ? "同步中" : "同步站点"}
+                  </button>
+                }
+              />
+            ))}
+        {!loading && (
+          <AddCard
+            label={cdnProviders.length === 0 ? "接入第一个 CDN" : "接入新的 CDN"}
+            hint="支持腾讯云 CDN 与七牛云 CDN"
+            onClick={() => setCreateOpen(true)}
           />
         )}
       </div>
+
+      <CredentialDialog
+        mode="cdn"
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        accessToken={accessToken}
+        onCreated={(name) => {
+          toast({ title: `已添加 ${name}`, description: "点击「同步站点」导入该账号下的加速域名。", tone: "success" });
+          fetchProviders();
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        destructive
+        loading={deleting}
+        confirmLabel="删除凭据"
+        title={`删除 ${pendingDelete?.name ?? ""}？`}
+        description="绑定该凭据的站点会变为「未绑定」，续签后将不再自动部署；站点本身和已有证书会保留。"
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }

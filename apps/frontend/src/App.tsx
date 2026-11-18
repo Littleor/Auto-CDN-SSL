@@ -31,18 +31,12 @@ const AppShell = lazy(async () => ({ default: (await import("@/components/AppShe
 
 function RouteFallback() {
   return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-7xl items-center justify-center px-6 py-16">
-      <div className="surface w-full max-w-4xl p-8">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="skeleton-block h-28" />
-          <div className="skeleton-block h-28" />
-          <div className="skeleton-block h-28" />
-        </div>
-        <div className="mt-6 space-y-3">
-          <div className="skeleton-block h-12 w-52" />
-          <div className="skeleton-block h-28 w-full" />
-          <div className="skeleton-block h-72 w-full" />
-        </div>
+    <div className="mx-auto max-w-[1600px] px-4 pt-20 md:px-6">
+      <div className="skeleton h-10 w-64 rounded-full" />
+      <div className="mt-10 grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="skeleton h-[148px] rounded-2xl" />
+        ))}
       </div>
     </div>
   );

@@ -1,207 +1,148 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy, MagnifyingGlass } from "@phosphor-icons/react";
+import { ClockCounterClockwise } from "@phosphor-icons/react";
 import { EmptyState } from "@/components/EmptyState";
-import { PageIntro } from "@/components/PageIntro";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/PageHeader";
 import { PaginationControls } from "@/components/PaginationControls";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SearchField } from "@/components/SearchField";
+import { HistoryRow, type HistoryRecord } from "@/components/history/HistoryRow";
+import { Chip } from "@/components/ui/chip";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest } from "@/lib/api";
-import { formatDate } from "@/lib/format";
-import {
-  getBadgeVariantByStatus,
-  getCertificateStatusLabel,
-  getHistoryCategoryLabel,
-  getHistoryTriggerLabel,
-  getHistoryTriggerVariant,
-  getPlatformLabel
-} from "@/lib/statusDisplay";
+import { useToast } from "@/contexts/ToastContext";
+import { apiRequest, errorMessage } from "@/lib/api";
+import { isScheduledTrigger } from "@/lib/statusDisplay";
 
-type HistoryRecord = {
-  id: string;
-  category: "renew" | "deploy";
-  siteId: string;
-  domain: string | null;
-  providerCredentialId: string | null;
-  providerType: string | null;
-  providerName: string | null;
-  triggerSource: string;
-  status: string;
-  message: string | null;
-  occurredAt: string;
-  createdAt: string;
-};
+type Filter = "all" | "renew" | "deploy" | "failed" | "scheduled" | "manual";
 
-function truncateText(value: string, maxLength: number) {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength)}...`;
+const filters: { value: Filter; label: string }[] = [
+  { value: "all", label: "全部" },
+  { value: "renew", label: "续签" },
+  { value: "deploy", label: "部署" },
+  { value: "failed", label: "失败" },
+  { value: "scheduled", label: "自动触发" },
+  { value: "manual", label: "手动触发" }
+];
+
+function matches(item: HistoryRecord, filter: Filter) {
+  if (filter === "renew" || filter === "deploy") return item.category === filter;
+  if (filter === "failed") return item.status?.toLowerCase() === "failed";
+  if (filter === "scheduled") return isScheduledTrigger(item.triggerSource);
+  if (filter === "manual") return !isScheduledTrigger(item.triggerSource);
+  return true;
+}
+
+function dayKey(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "未知日期";
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return "今天";
+  if (date.toDateString() === yesterday.toDateString()) return "昨天";
+  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "short" });
 }
 
 export function DeploymentsPage() {
   const { accessToken } = useAuth();
+  const toast = useToast();
   const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState(48);
 
   useEffect(() => {
     if (!accessToken) return;
-    apiRequest<HistoryRecord[]>("/history", {}, accessToken).then(setHistory);
-  }, [accessToken]);
+    apiRequest<HistoryRecord[]>("/history", {}, accessToken)
+      .then(setHistory)
+      .catch((err: unknown) => toast({ title: "加载历史失败", description: errorMessage(err), tone: "error" }))
+      .finally(() => setLoading(false));
+  }, [accessToken, toast]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [query, pageSize]);
 
-  const filteredHistory = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return history;
+  const counts = useMemo(() => {
+    const result = {} as Record<Filter, number>;
+    filters.forEach((item) => (result[item.value] = history.filter((record) => matches(record, item.value)).length));
+    return result;
+  }, [history]);
 
-    return history.filter((item) => {
-      return [item.domain, item.providerName, item.providerCredentialId, item.message]
-        .filter((value): value is string => Boolean(value))
-        .some((value) => value.toLowerCase().includes(normalizedQuery));
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return history
+      .filter((item) => matches(item, filter))
+      .filter(
+        (item) =>
+          !q ||
+          [item.domain, item.providerName, item.providerCredentialId, item.message]
+            .filter((value): value is string => Boolean(value))
+            .some((value) => value.toLowerCase().includes(q))
+      )
+      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+  }, [history, filter, query]);
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const groups = useMemo(() => {
+    const map = new Map<string, HistoryRecord[]>();
+    paged.forEach((item) => {
+      const key = dayKey(item.occurredAt);
+      map.set(key, [...(map.get(key) ?? []), item]);
     });
-  }, [history, query]);
-
-  const pagedHistory = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredHistory.slice(start, start + pageSize);
-  }, [filteredHistory, page, pageSize]);
-
-  useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filteredHistory.length / pageSize));
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [filteredHistory.length, page, pageSize]);
-
-  const handleCopyMessage = async (item: HistoryRecord) => {
-    if (!item.message) return;
-    try {
-      await navigator.clipboard.writeText(item.message);
-      setCopiedId(item.id);
-      window.setTimeout(() => {
-        setCopiedId((current) => (current === item.id ? null : current));
-      }, 1500);
-    } catch {
-      // Ignore clipboard failures.
-    }
-  };
+    return [...map.entries()];
+  }, [paged]);
 
   return (
-    <div className="space-y-6">
-      <PageIntro
+    <div>
+      <PageHeader
         title="历史记录"
-        description="查看续签和部署的执行轨迹。"
+        description="每一次实际执行的续签与部署。定时扫描判定「无需续签」时不会产生记录。"
+        action={<SearchField value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="搜索域名、凭据或信息" className="w-full md:w-[320px]" />}
       />
 
-      <Card className="p-1">
-        <CardHeader className="gap-4">
-          <div>
-            <CardTitle>最近历史</CardTitle>
-            <p className="mt-2 text-sm text-muted-foreground">自动与手动操作会使用不同颜色标识，便于快速分辨来源。</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              仅记录实际执行的续签与部署；如果定时扫描判断“当前无需续签”，不会生成历史记录。
-            </p>
-          </div>
-          <div className="relative max-w-md">
-            <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-10"
-              placeholder="搜索域名、凭据名或备注"
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Table className="min-w-[1120px] table-auto">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[90px] whitespace-nowrap">类型</TableHead>
-                <TableHead className="min-w-[180px] whitespace-nowrap">域名</TableHead>
-                <TableHead className="min-w-[200px] whitespace-nowrap">平台 / 凭据</TableHead>
-                <TableHead className="min-w-[120px] whitespace-nowrap">方式</TableHead>
-                <TableHead className="min-w-[100px] whitespace-nowrap">状态</TableHead>
-                <TableHead className="min-w-[170px] whitespace-nowrap">时间</TableHead>
-                <TableHead className="min-w-[260px] whitespace-nowrap">备注</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pagedHistory.map((item) => (
-                <TableRow key={`${item.category}-${item.id}`}>
-                  <TableCell className="align-top whitespace-nowrap">
-                    <Badge variant="muted">{getHistoryCategoryLabel(item.category)}</Badge>
-                  </TableCell>
-                  <TableCell className="align-top">
-                    <div className="max-w-[180px] truncate text-sm" title={item.domain || "-"}>
-                      {item.domain || "-"}
-                    </div>
-                  </TableCell>
-                  <TableCell className="align-top">
-                    <div className="min-w-[180px]">
-                      <div className="text-sm font-medium">{getPlatformLabel(item.providerType)}</div>
-                      <div className="truncate text-xs text-muted-foreground" title={item.providerName || item.providerCredentialId || "-"}>
-                        {item.providerName || item.providerCredentialId || "-"}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="align-top whitespace-nowrap">
-                    <Badge variant={getHistoryTriggerVariant(item.triggerSource)}>
-                      {getHistoryTriggerLabel(item.triggerSource)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="align-top whitespace-nowrap">
-                    <Badge variant={getBadgeVariantByStatus(item.status)}>
-                      {getCertificateStatusLabel(item.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="align-top whitespace-nowrap">{formatDate(item.occurredAt)}</TableCell>
-                  <TableCell className="align-top">
-                    {item.message ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleCopyMessage(item)}
-                        title={item.message}
-                        className="flex max-w-[260px] items-start gap-2 text-left text-xs text-muted-foreground"
-                      >
-                        {copiedId === item.id ? (
-                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                        ) : (
-                          <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        )}
-                        <span className="truncate">{copiedId === item.id ? "已复制完整备注" : truncateText(item.message, 36)}</span>
-                      </button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+      <div className="no-scrollbar fade-x -mx-4 flex gap-2 overflow-x-auto px-4 pb-6 md:mx-0 md:px-0">
+        {filters.map((item) => (
+          <Chip key={item.value} active={filter === item.value} count={counts[item.value]} onClick={() => { setFilter(item.value); setPage(1); }}>
+            {item.label}
+          </Chip>
+        ))}
+      </div>
 
-          {filteredHistory.length === 0 ? (
-            <EmptyState
-              icon={<Copy className="h-6 w-6" weight="duotone" />}
-              title="暂无匹配的历史记录"
-              description="可以换一个关键词搜索，或者等系统产生新的续签、部署动作后再回来查看。"
-            />
-          ) : (
-            <PaginationControls
-              totalItems={filteredHistory.length}
-              page={page}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-            />
-          )}
-        </CardContent>
-      </Card>
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="skeleton h-[72px]" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={<ClockCounterClockwise />}
+          title={history.length === 0 ? "暂无历史记录" : "没有匹配的记录"}
+          description={history.length === 0 ? "发生续签或部署后，记录会出现在这里。" : "换个关键词或筛选条件再看看。"}
+        />
+      ) : (
+        <div className="space-y-8">
+          {groups.map(([day, items]) => (
+            <section key={day}>
+              <h2 className="sticky top-14 z-10 -mx-1 mb-1 bg-background/85 px-1 py-2 text-sm font-semibold text-muted-foreground backdrop-blur-xl">
+                {day}
+              </h2>
+              <div className="-mx-3">
+                {items.map((item) => (
+                  <HistoryRow key={`${item.category}-${item.id}`} item={item} />
+                ))}
+              </div>
+            </section>
+          ))}
+          <PaginationControls
+            totalItems={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            pageSizeOptions={[24, 48, 96]}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+          />
+        </div>
+      )}
     </div>
   );
 }

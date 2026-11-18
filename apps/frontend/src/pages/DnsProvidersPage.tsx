@@ -1,191 +1,126 @@
-import { useEffect, useMemo, useState } from "react";
-import { Cloud, Plus, Trash } from "@phosphor-icons/react";
-import { EmptyState } from "@/components/EmptyState";
-import { PageIntro } from "@/components/PageIntro";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus } from "@phosphor-icons/react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { PageHeader } from "@/components/PageHeader";
+import { AddCard, CredentialCard } from "@/components/credentials/CredentialCard";
+import { CredentialDialog } from "@/components/credentials/CredentialDialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest } from "@/lib/api";
-
-const initialForm = {
-  providerType: "tencent_dns",
-  name: "",
-  secretId: "",
-  secretKey: ""
-};
+import { useToast } from "@/contexts/ToastContext";
+import { apiRequest, errorMessage } from "@/lib/api";
+import type { Provider } from "@/lib/sites";
 
 export function DnsProvidersPage() {
   const { accessToken } = useAuth();
-  const [providers, setProviders] = useState<any[]>([]);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(initialForm);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Provider | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const dnsProviders = useMemo(
-    () => providers.filter((provider) => provider.providerType === "tencent_dns"),
-    [providers]
-  );
-  const reusableCdnProviders = useMemo(
-    () => providers.filter((provider) => provider.providerType === "tencent"),
-    [providers]
-  );
+  const dnsProviders = useMemo(() => providers.filter((p) => p.providerType === "tencent_dns"), [providers]);
+  const reusable = useMemo(() => providers.filter((p) => p.providerType === "tencent"), [providers]);
 
-  const displayProviders = useMemo(
-    () =>
-      [
-        ...dnsProviders.map((provider) => ({
-          ...provider,
-          source: "dns" as const
-        })),
-        ...reusableCdnProviders.map((provider) => ({
-          ...provider,
-          source: "cdn" as const
-        }))
-      ],
-    [dnsProviders, reusableCdnProviders]
-  );
-
-  const fetchProviders = () => {
+  const fetchProviders = useCallback(() => {
     if (!accessToken) return;
-    apiRequest<any[]>("/providers", {}, accessToken).then(setProviders);
-  };
+    apiRequest<Provider[]>("/providers", {}, accessToken)
+      .then(setProviders)
+      .catch((err: unknown) => toast({ title: "加载凭据失败", description: errorMessage(err), tone: "error" }))
+      .finally(() => setLoading(false));
+  }, [accessToken, toast]);
 
-  useEffect(() => {
-    fetchProviders();
-  }, [accessToken]);
+  useEffect(() => fetchProviders(), [fetchProviders]);
 
-  const handleSubmit = async () => {
-    if (!accessToken) return;
-    setLoading(true);
-    setError(null);
+  const confirmDelete = async () => {
+    if (!accessToken || !pendingDelete) return;
+    setDeleting(true);
     try {
-      await apiRequest(
-        "/providers",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            providerType: "tencent_dns",
-            name: form.name,
-            config: { secretId: form.secretId, secretKey: form.secretKey }
-          })
-        },
-        accessToken
-      );
-      setOpen(false);
-      setForm(initialForm);
+      await apiRequest(`/providers/${pendingDelete.id}`, { method: "DELETE" }, accessToken);
+      toast({ title: `已删除 ${pendingDelete.name}`, tone: "success" });
+      setPendingDelete(null);
       fetchProviders();
-    } catch (err: any) {
-      setError(err.message || "创建失败");
+    } catch (err) {
+      toast({ title: "删除失败", description: errorMessage(err), tone: "error" });
     } finally {
-      setLoading(false);
+      setDeleting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!accessToken) return;
-    await apiRequest(`/providers/${id}`, { method: "DELETE" }, accessToken);
-    fetchProviders();
-  };
-
   return (
-    <div className="space-y-6">
-      <PageIntro
+    <div>
+      <PageHeader
         title="DNS 凭据"
-        description="管理 DNS-01 验证凭据，并支持复用腾讯云 CDN 凭据。"
+        description="DNS-01 验证通过添加 TXT 记录完成。可新建独立的 DNS 凭据，也可直接复用腾讯云 CDN 凭据。"
         action={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" weight="bold" />
-                新建 DNS 凭据
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>新增 DNS 凭据</DialogTitle>
-                <DialogDescription>填写腾讯云 SecretId / SecretKey。</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">凭据名称</label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="如：DNS 生产环境"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">SecretId</label>
-                  <Input
-                    value={form.secretId}
-                    onChange={(e) => setForm({ ...form, secretId: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">SecretKey</label>
-                  <Input
-                    value={form.secretKey}
-                    onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
-                  />
-                </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  取消
-                </Button>
-                <Button onClick={handleSubmit} disabled={loading}>
-                  {loading ? "保存中..." : "保存"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" weight="bold" />
+            新建 DNS 凭据
+          </Button>
         }
       />
 
-      <Card className="p-1">
-        <CardContent className="py-4 text-sm text-muted-foreground">
-          「CDN 凭据」里的腾讯云凭据也会出现在这里，可直接用于 DNS-01 验证。
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {displayProviders.map((provider) => (
-          <Card key={`${provider.source}-${provider.id}`} className="p-1">
-            <CardHeader className="flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base">{provider.name}</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {provider.source === "dns" ? "腾讯云 DNS" : "腾讯云 CDN"}
-                </p>
-              </div>
-              <Cloud className="h-5 w-5 text-primary" weight="duotone" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
-                创建时间：{new Date(provider.createdAt).toLocaleDateString("zh-CN")}
-              </div>
-              {provider.source === "dns" ? (
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(provider.id)}>
-                  <Trash className="h-4 w-4" />
-                </Button>
-              ) : (
-                <span className="text-xs text-muted-foreground">可复用</span>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-        {displayProviders.length === 0 && (
-          <EmptyState
-            icon={<Cloud className="h-6 w-6" weight="duotone" />}
-            title="暂无 DNS / CDN 凭据"
-            description="创建 DNS 凭据或先接入腾讯云 CDN 凭据后，这里会自动形成可复用的 DNS-01 验证能力。"
-          />
-        )}
+      <h2 className="mb-4 text-base font-semibold tracking-[-0.015em]">独立 DNS 凭据</h2>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-x-4 gap-y-5">
+        {loading
+          ? Array.from({ length: 2 }).map((_, index) => <div key={index} className="skeleton aspect-[16/9] rounded-2xl" />)
+          : dnsProviders.map((provider) => (
+              <CredentialCard
+                key={provider.id}
+                name={provider.name}
+                providerType={provider.providerType}
+                typeLabel="腾讯云 DNS"
+                createdAt={provider.createdAt}
+                onDelete={() => setPendingDelete(provider)}
+              />
+            ))}
+        {!loading && <AddCard label="新建 DNS 凭据" hint="腾讯云 SecretId / SecretKey" onClick={() => setCreateOpen(true)} />}
       </div>
+
+      {!loading && reusable.length > 0 && (
+        <>
+          <h2 className="mb-1 mt-12 text-base font-semibold tracking-[-0.015em]">可复用的 CDN 凭据</h2>
+          <p className="mb-5 text-sm text-muted-foreground">以下腾讯云 CDN 凭据可直接在「域名验证」中选作 DNS-01 凭据，管理请前往「CDN 凭据」。</p>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-x-4 gap-y-5">
+            {reusable.map((provider) => (
+              <CredentialCard
+                key={provider.id}
+                name={provider.name}
+                providerType={provider.providerType}
+                typeLabel="腾讯云 CDN"
+                createdAt={provider.createdAt}
+                badge={
+                  <span className="inline-flex h-8 items-center rounded-full bg-background/80 px-3 text-xs font-medium backdrop-blur">
+                    复用
+                  </span>
+                }
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      <CredentialDialog
+        mode="dns"
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        accessToken={accessToken}
+        onCreated={(name) => {
+          toast({ title: `已添加 ${name}`, tone: "success" });
+          fetchProviders();
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        destructive
+        loading={deleting}
+        confirmLabel="删除凭据"
+        title={`删除 ${pendingDelete?.name ?? ""}？`}
+        description="使用该凭据做 DNS-01 验证的顶级域名需要重新选择凭据，否则续签会失败。"
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }

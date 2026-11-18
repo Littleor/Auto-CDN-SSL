@@ -1,17 +1,13 @@
-import { ArrowRight, ClockCountdown, ShieldCheck } from "@phosphor-icons/react";
+import { errorMessage } from "@/lib/api";
 import { useState } from "react";
+import { ArrowRight, CircleNotch } from "@phosphor-icons/react";
 import { Link, useNavigate } from "react-router-dom";
-import { BrandMark } from "@/components/BrandMark";
+import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageSeo } from "@/lib/seo";
-
-const introRows = [
-  "证书状态、部署记录与凭据管理统一放在一个工作台中。",
-  "登录后会直接回到新的系统管理界面。",
-  "临近到期站点与最近动作会优先显示。"
-];
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -35,104 +31,59 @@ export function LoginPage() {
     try {
       await login(email, password);
       navigate("/app/dashboard");
-    } catch (err: any) {
-      setError(err.message || "登录失败");
+    } catch (err) {
+      setError(errorMessage(err, "登录失败"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[100dvh]">
-      <div className="mx-auto max-w-[1360px] px-4 py-4 sm:px-6 sm:py-6">
-        <div className="grid min-h-[calc(100dvh-3rem)] gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <section className="surface flex flex-col justify-between p-7 md:p-8">
-            <div>
-              <BrandMark />
-              <div className="mt-10 max-w-3xl">
-                <h1 className="max-w-2xl text-[2.2rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground md:text-[3.4rem]">
-                  登录后继续处理你的 CDN 证书工作流
-                </h1>
-                <p className="mt-4 max-w-[58ch] text-sm leading-8 text-muted-foreground md:text-[15px]">
-                  登录后即可继续管理站点、验证策略、平台凭据和部署动作。
-                </p>
-              </div>
-
-              <div className="mt-8 overflow-hidden rounded-[1.6rem] border border-border/65 bg-white/56">
-                <div className="divide-y divide-border/60">
-                  {introRows.map((row) => (
-                    <div key={row} className="flex items-center gap-3 px-5 py-4">
-                      <ShieldCheck className="h-4 w-4 text-primary" weight="fill" />
-                      <span className="text-sm leading-7 text-foreground">{row}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-3 text-sm text-muted-foreground">
-              <Link to="/" className="transition-colors hover:text-foreground">
-                返回官网
-              </Link>
-              <span className="text-border">/</span>
-              <Link to="/register" className="transition-colors hover:text-foreground">
-                创建账号
-              </Link>
-            </div>
-          </section>
-
-          <section className="surface flex items-center p-5 md:p-6">
-            <div className="mx-auto w-full max-w-xl">
-              <h2 className="text-[1.9rem] font-semibold tracking-[-0.05em] text-foreground md:text-[2.5rem]">
-                登录控制台
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                继续管理站点、凭据、域名验证和部署动作。
-              </p>
-
-              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">邮箱</label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="dev@example.com"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">使用已验证的管理邮箱登录。</p>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">密码</label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="请输入账号密码"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">登录成功后会自动跳转到新版概览页。</p>
-                </div>
-                {error && (
-                  <div className="rounded-[1.3rem] border border-destructive/15 bg-destructive/8 px-4 py-3 text-sm text-destructive">
-                    {error}
-                  </div>
-                )}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <ClockCountdown className="h-4 w-4 text-primary" weight="duotone" />
-                    登录后继续当前工作上下文
-                  </div>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "正在登录..." : "进入系统"}
-                    {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
+    <AuthLayout
+      title="欢迎回来"
+      description="登录后继续管理你的 CDN 证书。"
+      switchLabel="注册"
+      switchTo="/register"
+      footer={
+        <>
+          还没有账号？
+          <Link to="/register" className="font-medium text-foreground underline-offset-4 hover:underline">
+            创建一个
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Field label="邮箱" htmlFor="login-email">
+          <Input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            required
+            autoFocus
+          />
+        </Field>
+        <Field label="密码" htmlFor="login-password">
+          <Input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="输入密码"
+            required
+          />
+        </Field>
+        {error && <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>}
+        <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          {loading ? <CircleNotch className="h-4 w-4 animate-spin" /> : null}
+          {loading ? "正在登录" : "登录"}
+          {!loading && <ArrowRight className="h-4 w-4" weight="bold" />}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }
